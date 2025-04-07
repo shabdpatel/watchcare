@@ -1,42 +1,126 @@
-import { FaInstagram, FaTwitter, FaFacebookF, FaYoutube } from "react-icons/fa";
+import { FaInstagram, FaTwitter, FaFacebookF } from "react-icons/fa";
 
 const Footer = () => {
     return (
-        <footer className="bg-black text-white py-12 border-t border-gray-800">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-                {/* Crazy Tagline */}
-                <h2 className="text-3xl font-light tracking-widest uppercase text-gray-300">
-                    Time Waits for No One, But You Can Own It.
-                </h2>
-
-                {/* Social Media Links */}
-                <div className="flex justify-center gap-6 mt-6">
-                    <a href="#" className="text-gray-400 hover:text-white text-xl transition-all duration-300">
-                        <FaInstagram />
-                    </a>
-                    <a href="#" className="text-gray-400 hover:text-white text-xl transition-all duration-300">
-                        <FaTwitter />
-                    </a>
-                    <a href="#" className="text-gray-400 hover:text-white text-xl transition-all duration-300">
-                        <FaFacebookF />
-                    </a>
-                    <a href="#" className="text-gray-400 hover:text-white text-xl transition-all duration-300">
-                        <FaYoutube />
-                    </a>
+        <footer className="bg-gray-50 text-gray-600 py-12">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                {/* Newsletter Section */}
+                <div className="pb-8 mb-8 border-b border-gray-200">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
+                            <p className="text-gray-600">Subscribe for exclusive offers and style inspiration</p>
+                        </div>
+                        <form className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                            <input
+                                type="email"
+                                placeholder="Enter your email"
+                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Subscribe
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
-                {/* Footer Links */}
-                <div className="flex flex-wrap justify-center gap-6 mt-6 text-gray-400 text-sm uppercase">
-                    <a href="#" className="hover:text-white transition-all duration-300">About Us</a>
-                    <a href="#" className="hover:text-white transition-all duration-300">Contact</a>
-                    <a href="#" className="hover:text-white transition-all duration-300">Privacy Policy</a>
-                    <a href="#" className="hover:text-white transition-all duration-300">Terms of Service</a>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 text-sm">
+                    {/* Customer Service */}
+                    <div>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Customer Service</h3>
+                        <ul className="space-y-2">
+                            <li><a href="#" className="hover:text-gray-900 transition">Order Tracking</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">FAQs</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Returns & Exchanges</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Shipping Information</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Contact Support</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Know Helios */}
+                    <div>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Know Helios</h3>
+                        <ul className="space-y-2">
+                            <li><a href="#" className="hover:text-gray-900 transition">About Us</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Corporate Information</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Bulk Orders</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Store Locator</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Careers</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Legal */}
+                    <div>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Legal</h3>
+                        <ul className="space-y-2">
+                            <li><a href="#" className="hover:text-gray-900 transition">Privacy Policy</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Terms of Service</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Cookie Policy</a></li>
+                            <li><a href="#" className="hover:text-gray-900 transition">Accessibility</a></li>
+                        </ul>
+                    </div>
+
+                    {/* Contact Us */}
+                    <div>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Contact Us</h3>
+                        <ul className="space-y-2">
+                            <li className="text-gray-800">Helios Customer Care</li>
+                            <li>
+                                <a href="tel:+919355401889" className="text-blue-600 hover:underline">+91-9355401889</a>
+                            </li>
+                            <li>
+                                <a href="mailto:support@helios.com" className="text-blue-600 hover:underline">support@helios.com</a>
+                            </li>
+                            <li className="mt-4">
+                                <p className="text-gray-600">Registered Office:</p>
+                                <p className="text-gray-800">123 Helios Plaza, Bangalore, India 560001</p>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Follow Us */}
+                    <div>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Connect With Us</h3>
+                        <div className="flex space-x-4 mb-4">
+                            <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                                <FaTwitter />
+                            </a>
+                            <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                                <FaFacebookF />
+                            </a>
+                            <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                                <FaInstagram />
+                            </a>
+                        </div>
+                        <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-gray-900 mb-2">Download Our App</h4>
+                            <div className="flex gap-2">
+                                <a href="#">
+                                    <img src="/app-store.svg" alt="App Store" className="h-10" />
+                                </a>
+                                <a href="#">
+                                    <img src="/google-play.svg" alt="Google Play" className="h-10" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Copyright */}
-                <p className="mt-8 text-gray-500 text-sm tracking-widest">
-                    © {new Date().getFullYear()} WatchStore. All Rights Reserved.
-                </p>
+                {/* Payment & Copyright */}
+                <div className="mt-12 pt-8 border-t border-gray-200">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex gap-4 flex-wrap">
+                            <img src="/visa.svg" alt="Visa" className="h-8" />
+                            <img src="/mastercard.svg" alt="Mastercard" className="h-8" />
+                            <img src="/paypal.svg" alt="PayPal" className="h-8" />
+                            <img src="/amex.svg" alt="American Express" className="h-8" />
+                        </div>
+                        <div className="text-gray-600 text-sm text-center md:text-right">
+                            <p>&copy; {new Date().getFullYear()} Helios. All rights reserved.</p>
+                            <p className="mt-1">Part of Titan Company Limited</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </footer>
     );

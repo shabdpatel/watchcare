@@ -7,16 +7,40 @@ const InputForm = () => {
         collectionType: 'Trending watches',
         company: '',
         description: '',
-        image: '',
+        images: ['', '', '', ''],
         price: '',
         gender: 'Unisex',
-        movement: 'Automatic',
+        movement: 'Quartz',
         material: 'Stainless Steel',
         stock: true,
         stockNumber: '',
         featured: false,
-        collectionYear: new Date().getFullYear()
+        collectionYear: new Date().getFullYear(),
+        glass: 'Mineral Glass',
+        handType: '3-Hand',
+        style: 'Casual',
+        occasion: 'Casual',
+        bandStyle: 'Bracelet',
+        collectionName: 'Bold',
+        countryOfOrigin: 'Switzerland',
+        manufacturedBy: '',
+        importedBy: '',
+        globalIdentifierValue: '',
+        globalIdentifierType: 'NA',
+        dialShape: 'Round',
+        dialColor: 'Black',
+        secondaryDialColor: 'Rose Gold',
+        dialType: 'Analog',
+        dialDiameter: '40',
+        dialThickness: '10',
+        strapColor: 'Rose Gold',
+        secondaryStrapColor: 'Rose Gold',
+        strapMaterial: 'Stainless Steel',
+        strapWidth: '18',
+        warranty: '24 Months',
+        waterResistance: '50 m'
     });
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -32,14 +56,18 @@ const InputForm = () => {
         setError('');
 
         try {
-            if (!formData.company || !formData.description || !formData.image || !formData.price) {
-                throw new Error('Required fields: Company, Description, Image, Price');
+            const requiredFields = [
+                'company', 'description', 'price', 'manufacturedBy', 'importedBy'
+            ];
+            const missingFields = requiredFields.filter(field => !formData[field]);
+            if (missingFields.length > 0) {
+                throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
             }
 
-            await addDoc(collection(db, formData.collectionType), {
+            const watchData = {
                 Company: formData.company,
                 Description: formData.description,
-                Image: formData.image,
+                images: formData.images.filter(url => url.trim() !== ''),
                 Price: Number(formData.price),
                 Gender: formData.gender,
                 Movement: formData.movement,
@@ -48,17 +76,46 @@ const InputForm = () => {
                 Stock_Number: formData.stockNumber ? Number(formData.stockNumber) : 0,
                 Featured: formData.featured,
                 CollectionYear: Number(formData.collectionYear),
+                Glass: formData.glass,
+                HandType: formData.handType,
+                Style: formData.style,
+                Occasion: formData.occasion,
+                BandStyle: formData.bandStyle,
+                CaseMaterial: formData.material,
+                Warranty: formData.warranty,
+                WaterResistance: formData.waterResistance,
+                Collection: formData.collectionName,
+                CountryOfOrigin: formData.countryOfOrigin,
+                ManufacturedBy: formData.manufacturedBy,
+                ImportedBy: formData.importedBy,
+                GlobalIdentifierValue: formData.globalIdentifierValue,
+                GlobalIdentifierType: formData.globalIdentifierType,
+                DialShape: formData.dialShape,
+                DialColor: formData.dialColor,
+                SecondaryDialColor: formData.secondaryDialColor,
+                DialType: formData.dialType,
+                DialDiameter: `${formData.dialDiameter} MM`,
+                DialThickness: `${formData.dialThickness} mm`,
+                StrapColor: formData.strapColor,
+                SecondaryStrapColor: formData.secondaryStrapColor,
+                StrapMaterial: formData.strapMaterial,
+                StrapWidth: `${formData.strapWidth} MM`,
                 createdAt: new Date()
-            });
+            };
 
-            setFormData({
-                ...formData,
+            await addDoc(collection(db, formData.collectionType), watchData);
+
+            setFormData(prev => ({
+                ...prev,
                 company: '',
                 description: '',
-                image: '',
+                images: ['', '', '', ''],
                 price: '',
                 stockNumber: '',
-            });
+                manufacturedBy: '',
+                importedBy: '',
+                globalIdentifierValue: ''
+            }));
 
         } catch (err) {
             setError(err.message);
@@ -75,236 +132,277 @@ const InputForm = () => {
         }));
     };
 
+    const handleImageChange = (index, value) => {
+        const newImages = [...formData.images];
+        newImages[index] = value;
+        setFormData(prev => ({ ...prev, images: newImages }));
+    };
+
     return (
-        <div className="bg-black min-h-screen text-white">
-            {/* Hero Section */}
-            <div className="h-64 overflow-hidden relative bg-gradient-to-r from-blue-900/50 to-gray-900/50">
+        <div className="min-h-screen bg-gray-50 text-gray-900">
+            <div className="h-64 overflow-hidden relative bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <h1 className="text-4xl font-light tracking-widest">Curate Luxury</h1>
+                    <div className="text-center space-y-4">
+                        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Curate Luxury</h1>
+                        <p className="text-gray-600 text-lg">Add exquisite timepieces to the collection</p>
+                    </div>
                 </div>
             </div>
 
-            {/* Form Container */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="bg-gray-900/50 rounded-xl p-8 shadow-2xl border border-gray-800">
-                    <h2 className="text-3xl font-light uppercase tracking-wider mb-8 text-center">
-                        Add Timepiece
-                    </h2>
+                <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
+                    <div className="mb-10 text-center">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">Add Timepiece</h2>
+                        <p className="text-gray-500">Fill in details to add a new watch to the collection</p>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-8">
                         {error && (
-                            <div className="p-4 bg-red-900/30 border border-red-600 rounded-lg">
-                                <p className="text-red-400">{error}</p>
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <p className="text-red-600 font-medium">{error}</p>
                             </div>
                         )}
 
-                        {/* Collection Type & Basic Info Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Collection Type
-                                </label>
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Collection Type</label>
                                 <select
                                     name="collectionType"
                                     value={formData.collectionType}
                                     onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
                                 >
                                     {collectionOptions.map(option => (
-                                        <option key={option} value={option} className="bg-gray-900">
-                                            {option}
-                                        </option>
+                                        <option key={option} value={option}>{option}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Gender
-                                </label>
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Gender</label>
                                 <select
                                     name="gender"
                                     value={formData.gender}
                                     onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-600 focus:border-transparent"                                >
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                                >
                                     {['Men', 'Women', 'Unisex'].map(option => (
-                                        <option key={option} value={option}
-                                            className="bg-gray-900"
-                                        >{option}</option>
+                                        <option key={option} value={option}>{option}</option>
                                     ))}
                                 </select>
                             </div>
                         </div>
 
-                        {/* Company & Price Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Brand
-                                </label>
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Brand</label>
                                 <input
                                     type="text"
                                     name="company"
                                     value={formData.company}
                                     onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3"
-                                    placeholder="Rolex"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     required
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Price (₹)
-                                </label>
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
                                 <input
                                     type="number"
                                     name="price"
                                     value={formData.price}
                                     onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3"
-                                    placeholder="25000"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     required
                                 />
                             </div>
                         </div>
 
-                        {/* Technical Specifications Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Movement
-                                </label>
-                                <select
-                                    name="movement"
-                                    value={formData.movement}
-                                    onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3"
-                                >
-                                    {['Automatic', 'Manual', 'Quartz', 'Solar'].map(option => (
-                                        <option key={option} className="bg-gray-900" value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Material
-                                </label>
-                                <select
-                                    name="material"
-                                    value={formData.material}
-                                    onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3"
-                                >
-                                    {['Stainless Steel', 'Titanium', 'Ceramic', 'Gold', 'Platinum'].map(option => (
-                                        <option key={option} className="bg-gray-900" value={option}>{option}</option>
-                                    ))}
-                                </select>
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Product Images (4 URLs)</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {formData.images.map((url, index) => (
+                                    <input
+                                        key={index}
+                                        type="url"
+                                        value={url}
+                                        onChange={(e) => handleImageChange(index, e.target.value)}
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                        placeholder={`Image URL ${index + 1}`}
+                                    />
+                                ))}
                             </div>
                         </div>
 
-                        {/* Description & Image */}
-                        <div>
-                            <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                Description
-                            </label>
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Technical Specifications</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <select
+                                    name="glass"
+                                    value={formData.glass}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border rounded-lg"
+                                >
+                                    <option>Mineral Glass</option>
+                                    <option>Sapphire Crystal</option>
+                                </select>
+
+                                <select
+                                    name="handType"
+                                    value={formData.handType}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border rounded-lg"
+                                >
+                                    <option>3-Hand</option>
+                                    <option>Chronograph</option>
+                                </select>
+
+                                <input
+                                    type="text"
+                                    name="warranty"
+                                    value={formData.warranty}
+                                    onChange={handleChange}
+                                    placeholder="Warranty"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+
+                                <input
+                                    type="text"
+                                    name="waterResistance"
+                                    value={formData.waterResistance}
+                                    onChange={handleChange}
+                                    placeholder="Water Resistance"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Brand Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                    type="text"
+                                    name="manufacturedBy"
+                                    value={formData.manufacturedBy}
+                                    onChange={handleChange}
+                                    placeholder="Manufacturer"
+                                    className="w-full p-2 border rounded-lg"
+                                    required
+                                />
+
+                                <input
+                                    type="text"
+                                    name="importedBy"
+                                    value={formData.importedBy}
+                                    onChange={handleChange}
+                                    placeholder="Imported By"
+                                    className="w-full p-2 border rounded-lg"
+                                    required
+                                />
+
+                                <input
+                                    type="text"
+                                    name="globalIdentifierValue"
+                                    value={formData.globalIdentifierValue}
+                                    onChange={handleChange}
+                                    placeholder="Global Identifier Value"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Dial Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <select
+                                    name="dialShape"
+                                    value={formData.dialShape}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border rounded-lg"
+                                >
+                                    <option>Round</option>
+                                    <option>Square</option>
+                                </select>
+
+                                <input
+                                    type="text"
+                                    name="dialColor"
+                                    value={formData.dialColor}
+                                    onChange={handleChange}
+                                    placeholder="Dial Color"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+
+                                <input
+                                    type="text"
+                                    name="secondaryDialColor"
+                                    value={formData.secondaryDialColor}
+                                    onChange={handleChange}
+                                    placeholder="Secondary Dial Color"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+
+                                <input
+                                    type="number"
+                                    name="dialDiameter"
+                                    value={formData.dialDiameter}
+                                    onChange={handleChange}
+                                    placeholder="Dial Diameter (mm)"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Strap Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                    type="text"
+                                    name="strapColor"
+                                    value={formData.strapColor}
+                                    onChange={handleChange}
+                                    placeholder="Strap Color"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+
+                                <input
+                                    type="text"
+                                    name="secondaryStrapColor"
+                                    value={formData.secondaryStrapColor}
+                                    onChange={handleChange}
+                                    placeholder="Secondary Strap Color"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+
+                                <input
+                                    type="number"
+                                    name="strapWidth"
+                                    value={formData.strapWidth}
+                                    onChange={handleChange}
+                                    placeholder="Strap Width (mm)"
+                                    className="w-full p-2 border rounded-lg"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Description</label>
                             <textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 h-32"
-                                placeholder="Oyster, 42 mm, Oystersteel and white gold Reference 336934"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32"
                                 required
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                Image URL
-                            </label>
-                            <input
-                                type="url"
-                                name="image"
-                                value={formData.image}
-                                onChange={handleChange}
-                                className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3"
-                                placeholder="https://example.com/premium-watch.jpg"
-                                required
-                            />
-                        </div>
-
-                        {/* Stock & Collection Year */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Stock Management
-                                </label>
-                                <div className="flex items-center space-x-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="stock"
-                                            checked={formData.stock}
-                                            onChange={handleChange}
-                                            className="form-checkbox h-5 w-5 text-blue-600 border-gray-600 rounded bg-gray-800"
-                                        />
-                                        <span className="ml-2 text-gray-300">In Stock</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="stockNumber"
-                                        value={formData.stockNumber}
-                                        onChange={handleChange}
-                                        className="w-32 bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2"
-                                        placeholder="Qty"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 uppercase text-sm tracking-widest mb-2">
-                                    Collection Year
-                                </label>
-                                <input
-                                    type="number"
-                                    name="collectionYear"
-                                    value={formData.collectionYear}
-                                    onChange={handleChange}
-                                    className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3"
-                                    min="2000"
-                                    max={new Date().getFullYear()}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Featured Toggle */}
-                        <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg">
-                            <div>
-                                <h3 className="text-gray-300 font-medium">Featured Item</h3>
-                                <p className="text-gray-500 text-sm">Show in featured collection</p>
-                            </div>
-                            <label className="inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="featured"
-                                    checked={formData.featured}
-                                    onChange={handleChange}
-                                    className="sr-only peer"
-                                />
-                                <div className="relative w-11 h-6 bg-gray-700 rounded-full peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-800">
-                                    <div className="absolute left-[2px] top-[2px] bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
-                                </div>
-                            </label>
-                        </div>
-
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-blue-600/80 hover:bg-blue-600 rounded-lg font-medium uppercase tracking-widest transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            {loading ? 'Crafting Timepiece...' : 'Add to Collection'}
+                            {loading ? 'Adding...' : 'Add to Collection'}
                         </button>
                     </form>
                 </div>
@@ -314,4 +412,3 @@ const InputForm = () => {
 };
 
 export default InputForm;
-
