@@ -8,8 +8,8 @@ const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const navItems = [
-        { name: 'ALL WATCHES', path: '/all_watches' },
-        { name: 'MEN', path: '/men' },
+        { name: 'WATCHES', path: '/all_watches' },
+        { name: 'SHOES', path: '/shoes' },
         { name: 'WOMEN', path: '/women' },
         { name: 'SMART', path: '/smart' },
         { name: 'BRANDS', path: '/brands' },
@@ -29,7 +29,7 @@ const Navbar = () => {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <div className="flex-shrink-0">
-                        <Link to="/" className="text-2xl font-bold uppercase tracking-tight">HECLOS</Link>
+                        <Link to="/" className="text-2xl font-bold uppercase tracking-tight">Unboxing</Link>
                     </div>
 
                     {/* Desktop Menu Items */}
@@ -59,7 +59,7 @@ const Navbar = () => {
 
                         {/* Icons */}
                         <div className="hidden sm:flex space-x-4 lg:space-x-6">
-                            <Link to="/account" className="text-gray-700 hover:text-black transition-colors">
+                            <Link to="/login" className="text-gray-700 hover:text-black transition-colors">
                                 <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
                             </Link>
                             <Link to="/wishlist" className="text-gray-700 hover:text-black transition-colors">
@@ -111,7 +111,7 @@ const Navbar = () => {
                                 />
                             </div>
                             <div className="flex space-x-6 mt-4 px-4">
-                                <Link to="/account" className="text-gray-700 hover:text-black transition-colors">
+                                <Link to="/login" className="text-gray-700 hover:text-black transition-colors">
                                     <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
                                 </Link>
                                 <Link to="/wishlist" className="text-gray-700 hover:text-black transition-colors">

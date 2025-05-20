@@ -118,15 +118,15 @@ const Form = ({ selectedService, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-gray-300/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-black rounded-2xl shadow-2xl w-full max-w-2xl relative overflow-hidden border border-gray-800"
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative overflow-hidden border border-gray-300"
             >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gray-800">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gray-200">
                     <div
-                        className="h-full bg-gradient-to-r from-rose-500 to-amber-300 transition-all duration-500"
+                        className="h-full bg-gray-800 transition-all duration-500"
                         style={{ width: `${(currentStep - 1) * 50}%` }}
                     />
                 </div>
@@ -134,14 +134,14 @@ const Form = ({ selectedService, onClose }) => {
                 <div className="p-8 relative">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
                     >
-                        <XMarkIcon className="w-6 h-6 text-rose-400" />
+                        <XMarkIcon className="w-6 h-6 text-gray-500 hover:text-gray-700" />
                     </button>
 
                     <div className="flex items-center gap-4 mb-8">
-                        <SparklesIcon className="w-8 h-8 bg-gradient-to-r from-rose-400 to-amber-300 text-transparent bg-clip-text" />
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-amber-300 bg-clip-text text-transparent uppercase tracking-wider">
+                        <SparklesIcon className="w-8 h-8 text-gray-700" />
+                        <h2 className="text-2xl font-semibold text-gray-800 uppercase tracking-wider">
                             {selectedService} Service Request
                         </h2>
                     </div>
@@ -151,8 +151,8 @@ const Form = ({ selectedService, onClose }) => {
                             <div
                                 key={step.number}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full border ${currentStep === step.number
-                                    ? 'border-rose-500 bg-rose-500/20 text-rose-400'
-                                    : 'border-gray-700 text-gray-400'
+                                    ? 'border-gray-800 bg-gray-800 text-white'
+                                    : 'border-gray-300 text-gray-500'
                                     } uppercase tracking-wider text-sm`}
                             >
                                 <span className="font-bold">{step.number}</span>
@@ -173,17 +173,18 @@ const Form = ({ selectedService, onClose }) => {
                                 >
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="relative">
-                                            <ClockIcon className="w-6 h-6 text-gray-400 absolute left-3 top-3" />
+                                            <ClockIcon className="w-6 h-6 text-gray-500 absolute left-3 top-3" />
                                             <input
                                                 type="text"
                                                 name="brand"
                                                 placeholder="Watch Brand"
                                                 value={formData.brand}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                             />
                                             <ErrorText text={errors.brand} />
                                         </div>
+
 
                                         <div className="relative">
                                             <ClockIcon className="w-6 h-6 text-gray-400 absolute left-3 top-3" />
@@ -193,7 +194,7 @@ const Form = ({ selectedService, onClose }) => {
                                                 placeholder="Watch Model"
                                                 value={formData.model}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                             />
                                             <ErrorText text={errors.model} />
                                         </div>
@@ -207,7 +208,7 @@ const Form = ({ selectedService, onClose }) => {
                                                 name="purchaseDate"
                                                 value={formData.purchaseDate}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                             />
                                             <ErrorText text={errors.purchaseDate} />
                                         </div>
@@ -217,7 +218,7 @@ const Form = ({ selectedService, onClose }) => {
                                                 name="warranty"
                                                 value={formData.warranty}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-4 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                             >
                                                 <option value="valid">Under Warranty</option>
                                                 <option value="expired">Warranty Expired</option>
@@ -231,7 +232,7 @@ const Form = ({ selectedService, onClose }) => {
                                             placeholder="Watch Description & Issues"
                                             value={formData.description}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all min-h-[150px]"
+                                            className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                         />
                                     </div>
                                 </motion.div>
@@ -253,7 +254,7 @@ const Form = ({ selectedService, onClose }) => {
                                             placeholder="Your Full Name"
                                             value={formData.name}
                                             onChange={handleInputChange}
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                            className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                         />
                                         <ErrorText text={errors.name} />
                                     </div>
@@ -267,7 +268,7 @@ const Form = ({ selectedService, onClose }) => {
                                                 placeholder="Phone Number"
                                                 value={formData.phone}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                             />
                                             <ErrorText text={errors.phone} />
                                         </div>
@@ -280,7 +281,7 @@ const Form = ({ selectedService, onClose }) => {
                                                 placeholder="Email Address"
                                                 value={formData.email}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                             />
                                             <ErrorText text={errors.email} />
                                         </div>
@@ -292,7 +293,7 @@ const Form = ({ selectedService, onClose }) => {
                                             placeholder="Shipping Address"
                                             value={formData.address}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all min-h-[100px]"
+                                            className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                         />
                                         <ErrorText text={errors.address} />
                                     </div>
@@ -355,7 +356,7 @@ const Form = ({ selectedService, onClose }) => {
                                                     placeholder="Card Number"
                                                     value={formData.cardNumber}
                                                     onChange={handleInputChange}
-                                                    className="w-full pl-12 pr-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                    className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                                 />
                                                 <ErrorText text={errors.cardNumber} />
                                             </div>
@@ -368,7 +369,7 @@ const Form = ({ selectedService, onClose }) => {
                                                         placeholder="MM/YY"
                                                         value={formData.expiry}
                                                         onChange={handleInputChange}
-                                                        className="w-full px-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                        className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                                     />
                                                     <ErrorText text={errors.expiry} />
                                                 </div>
@@ -380,7 +381,7 @@ const Form = ({ selectedService, onClose }) => {
                                                         placeholder="CVV"
                                                         value={formData.cvv}
                                                         onChange={handleInputChange}
-                                                        className="w-full px-4 py-3 bg-gray-900 rounded-lg border border-gray-800 text-gray-300 placeholder-gray-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all"
+                                                        className="w-full pl-12 pr-4 py-3 bg-white rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                                     />
                                                     <ErrorText text={errors.cvv} />
                                                 </div>

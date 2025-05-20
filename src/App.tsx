@@ -1,22 +1,31 @@
 import "./App.css";
 import Navbar from "./components/Navbar";
 import Homepage from "./pages/Homepage";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Footer from "./components/Footer";
 import Input_form from "./components/Input_form";
 import form from "./pages/form";
 import Detail from "./components/Details";
 import AllWatches from "./pages/All_wathces";
-import Men from "./pages/Men";
+import Shoes from "./pages/Shoes";
 import Women from "./pages/Women";
 import Smart from "./pages/Smart";
+import Brand from "./pages/Brand";
+import Login from "./components/Login";
+import Profile from "./components/Profile";
+import Register from "./components/Register";
+import { AuthProvider, useAuth } from './components/AuthContext';
+import UserOnboarding from './components/UserOnboarding';
 
-function App() {
+function AppContent() {
+  const { currentUser, onboardingCompleted, loading } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+
   return (
     <div className="flex flex-col min-h-screen">
       <BrowserRouter>
         <Navbar />
-        {/* Add pt-16 (or pt-[68px] if you need exact match) to account for navbar height */}
         <div className="flex-1 pt-20">
           <Routes>
             <Route path="/" element={<Homepage />} />
@@ -24,14 +33,36 @@ function App() {
             <Route path="/input" element={<Input_form />} />
             <Route path="/form" element={<form />} />
             <Route path="/details/:collectionName/:id" element={<Detail />} />
-            <Route path="/men" element={<Men />} />
+            <Route path="/shoes" element={<Shoes />} />
             <Route path="/women" element={<Women />} />
             <Route path="/smart" element={<Smart />} />
+            <Route path="/brand" element={<Brand />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={
+              currentUser ? (
+                onboardingCompleted ? (
+                  <Profile />
+                ) : (
+                  <UserOnboarding />
+                )
+              ) : (
+                <Navigate to="/login" />
+              )
+            } />
+            <Route path="/register" element={<Register />} />
           </Routes>
         </div>
         <Footer />
       </BrowserRouter>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

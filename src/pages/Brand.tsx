@@ -7,8 +7,8 @@ import Form from "./form";
 import { Link } from "react-router-dom";
 import FiltersSidebar from "../components/FiltersSidebar";
 
-const Men = () => {
-    // State variables (same as AllWatches)
+
+const Brand = () => {
     const [sortOption, setSortOption] = useState('bestsellers');
     const [selectedBrands, setSelectedBrands] = useState([]);
     const [selectedDialColors, setSelectedDialColors] = useState([]);
@@ -26,6 +26,8 @@ const Men = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [selectedService, setSelectedService] = useState(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+
+
 
     useEffect(() => {
         const fetchCollection = async (collectionName, setter) => {
@@ -47,35 +49,6 @@ const Men = () => {
         fetchCollection("Smart Watches", setSmartWatches);
     }, []);
 
-    // Add gender filter to the existing filter function
-    const filterWatches = (watches) => {
-        return watches.filter(watch => {
-            // New gender filter
-            if (watch.Gender !== 'Men') return false;
-
-            // Existing filters from AllWatches
-            if (selectedBrands.length > 0 && !selectedBrands.includes(watch.Company)) return false;
-            const watchPrice = Number(watch.Price) || 0;
-            if (watchPrice < priceRange[0] || watchPrice > priceRange[1]) return false;
-            if (selectedDialColors.length > 0 && watch.DialColor &&
-                !selectedDialColors.includes(watch.DialColor)) return false;
-            if (selectedDialShapes.length > 0 && watch.DialShape &&
-                !selectedDialShapes.includes(watch.DialShape)) return false;
-            if (selectedStrapColors.length > 0 && watch.StrapColor &&
-                !selectedStrapColors.includes(watch.StrapColor)) return false;
-            if (selectedStrapMaterials.length > 0 && watch.StrapMaterial &&
-                !selectedStrapMaterials.includes(watch.StrapMaterial)) return false;
-            if (selectedDialThicknesses.length > 0 && watch.Thickness) {
-                const thickness = Number(watch.Thickness);
-                let thicknessCategory = '';
-                // ... existing thickness calculations ...
-                if (!selectedDialThicknesses.includes(thicknessCategory)) return false;
-            }
-            return true;
-        });
-    };
-
-    // Rest of the component remains the same as AllWatches except for text changes
     const toggleWishlist = (watchId) => {
         setWishlist(prev =>
             prev.includes(watchId)
@@ -88,6 +61,7 @@ const Men = () => {
         setCart(prev => [...prev, { ...watch, quantity: 1 }]);
     };
 
+
     const renderRating = (rating) => {
         return [...Array(5)].map((_, i) => (
             <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`}>&#9733;</span>
@@ -98,6 +72,7 @@ const Men = () => {
         setSelectedService(service);
         setIsFormOpen(true);
     };
+
 
     const renderServiceSection = () => (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -164,29 +139,177 @@ const Men = () => {
                 return [...watches].sort((a, b) => new Date(b.DateAdded) - new Date(a.DateAdded));
             case 'rating':
                 return [...watches].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            case 'bestsellers':
             default:
-                // Assuming you have a salesCount property
                 return [...watches].sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
         }
     };
 
     const allWatches = [...trendingWatches, ...exclusiveWatches, ...smartWatches];
 
+    // Add this filtering function inside your Brand component, before the return statement
+    const filterWatches = (watches) => {
+        return watches.filter(watch => {
+            // Filter by brand
+            if (selectedBrands.length > 0 && !selectedBrands.includes(watch.Company)) {
+                return false;
+            }
 
+            // Filter by price range
+            const watchPrice = Number(watch.Price) || 0;
+            if (watchPrice < priceRange[0] || watchPrice > priceRange[1]) {
+                return false;
+            }
+
+            // Filter by dial color (assuming watch has a DialColor property)
+            if (selectedDialColors.length > 0 && watch.DialColor &&
+                !selectedDialColors.includes(watch.DialColor)) {
+                return false;
+            }
+
+            // Filter by dial shape (assuming watch has a DialShape property)
+            if (selectedDialShapes.length > 0 && watch.DialShape &&
+                !selectedDialShapes.includes(watch.DialShape)) {
+                return false;
+            }
+
+            // Filter by strap color (assuming watch has a StrapColor property)
+            if (selectedStrapColors.length > 0 && watch.StrapColor &&
+                !selectedStrapColors.includes(watch.StrapColor)) {
+                return false;
+            }
+
+            // Filter by strap material (assuming watch has a StrapMaterial property)
+            if (selectedStrapMaterials.length > 0 && watch.StrapMaterial &&
+                !selectedStrapMaterials.includes(watch.StrapMaterial)) {
+                return false;
+            }
+
+            // Filter by dial thickness (assuming watch has a Thickness property)
+            if (selectedDialThicknesses.length > 0 && watch.Thickness) {
+                const thickness = Number(watch.Thickness);
+                let thicknessCategory = '';
+
+                if (thickness < 6) thicknessCategory = 'Ultra Thin (<6mm)';
+                else if (thickness < 8) thicknessCategory = 'Thin (<8mm)';
+                else if (thickness <= 12) thicknessCategory = 'Medium (8-12mm)';
+                else if (thickness <= 15) thicknessCategory = 'Thick (>12mm)';
+                else thicknessCategory = 'Heavy Duty (>15mm)';
+
+                if (!selectedDialThicknesses.includes(thicknessCategory)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    };
+
+    const WatchCard = ({ watch }) => (
+        <Link
+            to={`/details/${watch.collectionName}/${watch.id}`}
+            key={`${watch.collectionName}-${watch.id}`}
+        >
+            <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
+                {/* Tags and buttons remain the same */}
+                {watch.tags && (
+                    <div className="absolute top-2 left-2 flex gap-2 z-10">
+                        {watch.tags.map((tag, index) => (
+                            <span
+                                key={index}
+                                className="px-2 py-1 text-xs uppercase rounded-full bg-opacity-90"
+                                style={{ backgroundColor: tag.color }}
+                            >
+                                {tag.label}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            toggleWishlist(watch.id);
+                        }}
+                        className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
+                    >
+                        {wishlist.includes(watch.id) ? (
+                            <HeartSolidIcon className="w-5 h-5 text-red-500" />
+                        ) : (
+                            <HeartIcon className="w-5 h-5 text-gray-800" />
+                        )}
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            addToCart(watch);
+                        }}
+                        className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
+                    >
+                        <ShoppingBagIcon className="w-5 h-5 text-gray-800" />
+                    </button>
+                </div>
+
+                <div className="aspect-square overflow-hidden relative">
+                    <img
+                        src={watch.Image}
+                        alt={watch.Company}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                </div>
+
+                <div className="p-4 space-y-1">
+                    <div className="flex justify-between items-start">
+                        {/* Modified brand name section */}
+                        <h3
+                            className="text-xl font-light tracking-normal text-gray-900"
+                            style={{
+                                fontVariant: 'small-caps',
+                                letterSpacing: '0.05em'
+                            }}
+                        >
+                            {watch.Company.toLowerCase() === 'amazit' ? (
+                                <span className="lowercase tracking-wide">{watch.Company}</span>
+                            ) : (
+                                watch.Company
+                            )}
+                        </h3>
+                        <div className="flex items-center gap-1">
+                            {renderRating(watch.rating || 0)}
+                        </div>
+                    </div>
+                    <p className="text-gray-600 text-lg font-light">Rs. {watch.Price}</p>
+                    <p className="text-gray-500 text-sm line-clamp-2">{watch.Description}</p>
+                    <div className="flex gap-2 mt-2">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                addToCart(watch);
+                            }}
+                            className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
+                        >
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+
+
+    // Apply the filter to your watches
     const filteredWatches = sortWatches(filterWatches(allWatches));
-
-
-    // Updated BreadcrumbAndSort component
     const BreadcrumbAndSort = () => (
         <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12 mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                {/* Breadcrumb Navigation */}
                 <div className="text-sm text-gray-600">
                     <Link to="/" className="hover:text-gray-900">HOME</Link>
                     <span className="mx-2">/</span>
-                    <span className="text-gray-900 font-medium">MEN'S WATCHES</span>
+                    <span className="text-gray-900 font-medium">Watch</span>
                 </div>
-                {/* ... rest of sort component ... */}
+
+                {/* Items Count and Sort */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
                     <div className="text-sm text-gray-600">
                         ITEMS {filteredWatches.length} OF {allWatches.length}
@@ -215,19 +338,20 @@ const Men = () => {
         </div>
     );
 
+
     return (
         <div className="bg-gray-100 min-h-screen text-gray-900">
-            {/* Updated page title */}
+            {/* Watch Section */}
             <div className="text-center py-8">
                 <div className="inline-block">
                     <h2 className="text-3xl font-light uppercase tracking-widest text-gray-700">
-                        Men's Watches
+                        Watch
                     </h2>
                     <hr className="border-gray-400 mt-3 mx-auto w-1/2" />
                 </div>
+
             </div>
 
-            {/* Rest of the component remains the same as AllWatches */}
             <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
                     <FiltersSidebar
@@ -248,7 +372,11 @@ const Men = () => {
                     />
                     <div className="flex-1">
                         <BreadcrumbAndSort />
-                        {/* ... same grid layout as AllWatches ... */}
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                            {filteredWatches.map((watch) => (
+                                <WatchCard key={`${watch.collectionName}-${watch.id}`} watch={watch} />
+                            ))}
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             {filteredWatches.map((watch) => (
 
@@ -331,11 +459,27 @@ const Men = () => {
                                 </Link>
                             ))}
                         </div>
+                        {filteredWatches.length === 0 && (
+                            <div className="col-span-full text-center py-12 flex flex-col items-center justify-center">
+                                <h3 className="text-lg font-medium text-gray-700">No watches match your filters</h3>
+                                <p className="text-gray-500 mt-2">Try adjusting your filter criteria</p>
+                            </div>
+                        )}
                     </div>
+
+                    {/* {visibleWatches < allWatches.length && (
+                    <div className="flex justify-center mt-8">
+                        <button
+                            onClick={() => setVisibleWatches(prev => prev + 8)}
+                            className="px-8 py-2 border border-gray-500 rounded-full hover:bg-gray-300/30 transition-colors duration-300 uppercase text-sm tracking-widest"
+                        >
+                            See More
+                        </button>
+                    </div>
+                )} */}
                 </div>
             </div>
 
-            {/* ... rest of the component (services section, modals, etc.) ... */}
             {renderServiceSection()}
 
             {isFormOpen && (
@@ -401,4 +545,4 @@ const Men = () => {
     );
 };
 
-export default Men;
+export default Brand;

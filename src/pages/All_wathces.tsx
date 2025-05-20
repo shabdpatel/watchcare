@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
-import { HeartIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import Form from "./form";
 import { Link } from "react-router-dom";
 import FiltersSidebar from "../components/FiltersSidebar";
+import {
+    HeartIcon,
+    ShoppingBagIcon,
+    XMarkIcon,
+    FunnelIcon,
+    ArrowsUpDownIcon
+} from "@heroicons/react/24/outline";
+import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 
 const AllWatches = () => {
     // Inside your AllWatches component
@@ -17,38 +23,47 @@ const AllWatches = () => {
     const [selectedStrapColors, setSelectedStrapColors] = useState([]);
     const [selectedStrapMaterials, setSelectedStrapMaterials] = useState([]);
     const [selectedDialThicknesses, setSelectedDialThicknesses] = useState([]);
-    const [trendingWatches, setTrendingWatches] = useState([]);
-    const [exclusiveWatches, setExclusiveWatches] = useState([]);
-    const [smartWatches, setSmartWatches] = useState([]);
-    // const [visibleWatches, setVisibleWatches] = useState(8);
     const [wishlist, setWishlist] = useState([]);
     const [selectedWatch, setSelectedWatch] = useState(null);
     const [cart, setCart] = useState([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [selectedService, setSelectedService] = useState(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
-
-
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+    const [isSortOpen, setIsSortOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [allWatches, setAllWatches] = useState([]);
 
     useEffect(() => {
-        const fetchCollection = async (collectionName, setter) => {
+        const fetchWatches = async () => {
             try {
-                const querySnapshot = await getDocs(collection(db, collectionName));
+                const querySnapshot = await getDocs(collection(db, "Watches"));
                 const watches = querySnapshot.docs.map((doc) => ({
                     id: doc.id,
-                    collectionName: collectionName,
+                    collectionName: "Watches",
+                    rating: Math.floor(Math.random() * 5) + 1,
+                    reviews: Math.floor(Math.random() * 100),
                     ...doc.data(),
+                    Image: doc.data().images?.[0] || '',
                 }));
-                setter(watches);
+                setAllWatches(watches);
             } catch (error) {
-                console.error(`Error fetching ${collectionName}:`, error);
+                console.error("Error fetching watches:", error);
+                setAllWatches([]);
             }
         };
 
-        fetchCollection("Trending watches", setTrendingWatches);
-        fetchCollection("Exclusive Watches", setExclusiveWatches);
-        fetchCollection("Smart Watches", setSmartWatches);
+        fetchWatches();
     }, []);
+
+    useEffect(() => {
+        if (isFiltersOpen || isSortOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+    }, [isFiltersOpen, isSortOpen]);
+
 
 
     const toggleWishlist = (watchId) => {
@@ -146,59 +161,55 @@ const AllWatches = () => {
         }
     };
 
-    const allWatches = [...trendingWatches, ...exclusiveWatches, ...smartWatches];
     // Add this filtering function inside your AllWatches component, before the return statement
     const filterWatches = (watches) => {
         return watches.filter(watch => {
-            // Filter by brand
+            // Category filtering
+            if (selectedCategory !== 'all') {
+                switch (selectedCategory) {
+                    case 'men':
+                        if (watch.Gender !== 'Male') return false;
+                        break;
+                    case 'women':
+                        if (watch.Gender !== 'Female') return false;
+                        break;
+                    case 'smart':
+                        // Check if it's a smart watch based on Movement type or CollectionType
+                        if (watch.Movement !== 'Smart' && watch.CollectionType !== 'Smart') return false;
+                        break;
+                }
+            }
+
+            // Brand filtering
             if (selectedBrands.length > 0 && !selectedBrands.includes(watch.Company)) {
                 return false;
             }
 
-            // Filter by price range
+            // Price range filtering
             const watchPrice = Number(watch.Price) || 0;
             if (watchPrice < priceRange[0] || watchPrice > priceRange[1]) {
                 return false;
             }
 
-            // Filter by dial color (assuming watch has a DialColor property)
+            // Other existing filters...
             if (selectedDialColors.length > 0 && watch.DialColor &&
                 !selectedDialColors.includes(watch.DialColor)) {
                 return false;
             }
 
-            // Filter by dial shape (assuming watch has a DialShape property)
             if (selectedDialShapes.length > 0 && watch.DialShape &&
                 !selectedDialShapes.includes(watch.DialShape)) {
                 return false;
             }
 
-            // Filter by strap color (assuming watch has a StrapColor property)
             if (selectedStrapColors.length > 0 && watch.StrapColor &&
                 !selectedStrapColors.includes(watch.StrapColor)) {
                 return false;
             }
 
-            // Filter by strap material (assuming watch has a StrapMaterial property)
             if (selectedStrapMaterials.length > 0 && watch.StrapMaterial &&
                 !selectedStrapMaterials.includes(watch.StrapMaterial)) {
                 return false;
-            }
-
-            // Filter by dial thickness (assuming watch has a Thickness property)
-            if (selectedDialThicknesses.length > 0 && watch.Thickness) {
-                const thickness = Number(watch.Thickness);
-                let thicknessCategory = '';
-
-                if (thickness < 6) thicknessCategory = 'Ultra Thin (<6mm)';
-                else if (thickness < 8) thicknessCategory = 'Thin (<8mm)';
-                else if (thickness <= 12) thicknessCategory = 'Medium (8-12mm)';
-                else if (thickness <= 15) thicknessCategory = 'Thick (>12mm)';
-                else thicknessCategory = 'Heavy Duty (>15mm)';
-
-                if (!selectedDialThicknesses.includes(thicknessCategory)) {
-                    return false;
-                }
             }
 
             return true;
@@ -210,15 +221,13 @@ const AllWatches = () => {
     const BreadcrumbAndSort = () => (
         <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12 mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                {/* Breadcrumb Navigation */}
                 <div className="text-sm text-gray-600">
                     <Link to="/" className="hover:text-gray-900">HOME</Link>
                     <span className="mx-2">/</span>
                     <span className="text-gray-900 font-medium">ALL WATCHES</span>
                 </div>
 
-                {/* Items Count and Sort */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+                <div className="hidden lg:flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
                     <div className="text-sm text-gray-600">
                         ITEMS {filteredWatches.length} OF {allWatches.length}
                     </div>
@@ -249,12 +258,166 @@ const AllWatches = () => {
 
     return (
         <div className="bg-gray-100 min-h-screen text-gray-900">
+
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg">
+                <div className="flex justify-between p-4 gap-2">
+                    <button
+                        onClick={() => setIsFiltersOpen(true)}
+                        className="flex-1 py-3 px-4 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                    >
+                        <FunnelIcon className="w-5 h-5 text-gray-700" />
+                        <span className="text-gray-700 font-medium">Filters</span>
+                    </button>
+                    <button
+                        onClick={() => setIsSortOpen(true)}
+                        className="flex-1 py-3 px-4 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                    >
+                        <ArrowsUpDownIcon className="w-5 h-5 text-gray-700" />
+                        <span className="text-gray-700 font-medium">Sort</span>
+                    </button>
+                </div>
+            </div>
+
+
+
+            {/* Updated Mobile Filters Overlay */}
+            {isFiltersOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 bg-white">
+                    <div className="h-full flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
+                            <button
+                                onClick={() => setIsFiltersOpen(false)}
+                                className="p-2 text-gray-500 hover:text-gray-700"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <FiltersSidebar
+                                selectedBrands={selectedBrands}
+                                setSelectedBrands={setSelectedBrands}
+                                selectedDialColors={selectedDialColors}
+                                setSelectedDialColors={setSelectedDialColors}
+                                selectedDialShapes={selectedDialShapes}
+                                setSelectedDialShapes={setSelectedDialShapes}
+                                selectedStrapColors={selectedStrapColors}
+                                setSelectedStrapColors={setSelectedStrapColors}
+                                selectedStrapMaterials={selectedStrapMaterials}
+                                setSelectedStrapMaterials={setSelectedStrapMaterials}
+                                selectedDialThicknesses={selectedDialThicknesses}
+                                setSelectedDialThicknesses={setSelectedDialThicknesses}
+                                priceRange={priceRange}
+                                setPriceRange={setPriceRange}
+                            />
+                        </div>
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setIsFiltersOpen(false)}
+                                className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile Sort Overlay */}
+            {isSortOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 bg-white">
+                    <div className="h-full flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Sort By</h2>
+                            <button
+                                onClick={() => setIsSortOpen(false)}
+                                className="p-2 text-gray-500 hover:text-gray-700"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <div className="space-y-4">
+                                {[
+                                    { value: 'bestsellers', label: 'Bestsellers' },
+                                    { value: 'price-low-high', label: 'Price: Low to High' },
+                                    { value: 'price-high-low', label: 'Price: High to Low' },
+                                    { value: 'newest', label: 'Newest Arrivals' },
+                                    { value: 'rating', label: 'Customer Rating' },
+                                ].map((option) => (
+                                    <button
+                                        key={option.value}
+                                        onClick={() => {
+                                            setSortOption(option.value);
+                                            setIsSortOpen(false);
+                                        }}
+                                        className={`w-full text-left p-3 rounded-lg ${sortOption === option.value
+                                            ? 'bg-gray-800 text-white'
+                                            : 'bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setIsSortOpen(false)}
+                                className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                Apply Sorting
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {/* All Watches Section */}
             <div className="text-center py-8">
                 <div className="inline-block">
                     <h2 className="text-3xl font-light uppercase tracking-widest text-gray-700">
                         All Watches
                     </h2>
+                    <div className="flex justify-center gap-6 mt-4 flex-wrap">
+                        <button
+                            onClick={() => setSelectedCategory('all')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'all'
+                                ? 'font-medium border-b-1 border-gray-700 text-gray-900'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            ALL WATCHES
+                        </button>
+                        <button
+                            onClick={() => setSelectedCategory('men')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'men'
+                                ? 'font-medium border-b-1 border-gray-700 text-gray-900'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            MEN
+                        </button>
+                        <button
+                            onClick={() => setSelectedCategory('women')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'women'
+                                ? 'font-medium border-b-1 border-gray-700 text-gray-900'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            WOMEN
+                        </button>
+                        <button
+                            onClick={() => setSelectedCategory('smart')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'smart'
+                                ? 'font-medium border-b-1 border-gray-700 text-gray-900'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            SMART WATCHES
+                        </button>
+                    </div>
                     <hr className="border-gray-400 mt-3 mx-auto w-1/2" />
                 </div>
 
@@ -262,22 +425,25 @@ const AllWatches = () => {
 
             <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
-                    <FiltersSidebar
-                        selectedBrands={selectedBrands}
-                        setSelectedBrands={setSelectedBrands}
-                        selectedDialColors={selectedDialColors}
-                        setSelectedDialColors={setSelectedDialColors}
-                        selectedDialShapes={selectedDialShapes}
-                        setSelectedDialShapes={setSelectedDialShapes}
-                        selectedStrapColors={selectedStrapColors}
-                        setSelectedStrapColors={setSelectedStrapColors}
-                        selectedStrapMaterials={selectedStrapMaterials}
-                        setSelectedStrapMaterials={setSelectedStrapMaterials}
-                        selectedDialThicknesses={selectedDialThicknesses}
-                        setSelectedDialThicknesses={setSelectedDialThicknesses}
-                        priceRange={priceRange}
-                        setPriceRange={setPriceRange}
-                    />
+                    {/* Desktop Filters - Add hidden lg:block wrapper */}
+                    <div className="hidden lg:block">
+                        <FiltersSidebar
+                            selectedBrands={selectedBrands}
+                            setSelectedBrands={setSelectedBrands}
+                            selectedDialColors={selectedDialColors}
+                            setSelectedDialColors={setSelectedDialColors}
+                            selectedDialShapes={selectedDialShapes}
+                            setSelectedDialShapes={setSelectedDialShapes}
+                            selectedStrapColors={selectedStrapColors}
+                            setSelectedStrapColors={setSelectedStrapColors}
+                            selectedStrapMaterials={selectedStrapMaterials}
+                            setSelectedStrapMaterials={setSelectedStrapMaterials}
+                            selectedDialThicknesses={selectedDialThicknesses}
+                            setSelectedDialThicknesses={setSelectedDialThicknesses}
+                            priceRange={priceRange}
+                            setPriceRange={setPriceRange}
+                        />
+                    </div>
                     <div className="flex-1">
                         <BreadcrumbAndSort />
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -288,20 +454,6 @@ const AllWatches = () => {
                                     key={`${watch.collectionName}-${watch.id}`}
                                 >
                                     <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
-                                        {watch.tags && (
-                                            <div className="absolute top-2 left-2 flex gap-2 z-10">
-                                                {watch.tags.map((tag, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="px-2 py-1 text-xs uppercase rounded-full bg-opacity-90"
-                                                        style={{ backgroundColor: tag.color }}
-                                                    >
-                                                        {tag.label}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-
                                         <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                                             <button
                                                 onClick={(e) => {
@@ -329,7 +481,7 @@ const AllWatches = () => {
 
                                         <div className="aspect-square overflow-hidden relative">
                                             <img
-                                                src={watch.Image}
+                                                src={watch.Image || watch.images?.[0]}
                                                 alt={watch.Company}
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             />

@@ -1,33 +1,73 @@
+// Import required React and icon components
+import { useState } from 'react';
 import { FaInstagram, FaTwitter, FaFacebookF } from "react-icons/fa";
 
 const Footer = () => {
+    // State management for email input and subscription status
+    const [email, setEmail] = useState('');
+    const [isSubscribed, setIsSubscribed] = useState(false);
+
+    // Handle form submission
+    const handleSubscribe = (e) => {
+        e.preventDefault();
+        // Add your email subscription API call or logic here
+        setIsSubscribed(true);  // Show confirmation message
+        setEmail('');  // Clear email input
+    };
+
     return (
         <footer className="bg-gray-50 text-gray-600 py-12">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                {/* Newsletter Section */}
+                {/* Newsletter Subscription Section */}
                 <div className="pb-8 mb-8 border-b border-gray-200">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
-                            <p className="text-gray-600">Subscribe for exclusive offers and style inspiration</p>
+                        {/* Subscription Text */}
+                        <div className="mb-4 md:mb-0">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                Stay Updated
+                            </h3>
+                            <p className="text-gray-600">
+                                Subscribe for exclusive offers and style inspiration
+                            </p>
                         </div>
-                        <form className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+
+                        {/* Subscription Form */}
+                        <form
+                            onSubmit={handleSubscribe}
+                            className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
+                        >
                             <input
                                 type="email"
                                 placeholder="Enter your email"
-                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                             />
-                            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <button
+                                type="submit"
+                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                            >
                                 Subscribe
                             </button>
                         </form>
+
+                        {/* Subscription Success Message */}
+                        {isSubscribed && (
+                            <div className="mt-4 md:mt-0 text-sm text-green-600">
+                                Thank you for subscribing! Please check your email for confirmation.
+                            </div>
+                        )}
                     </div>
                 </div>
 
+                {/* Main Footer Content Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 text-sm">
-                    {/* Customer Service */}
+                    {/* Customer Service Section */}
                     <div>
-                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Customer Service</h3>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">
+                            Customer Service
+                        </h3>
                         <ul className="space-y-2">
                             <li><a href="#" className="hover:text-gray-900 transition">Order Tracking</a></li>
                             <li><a href="#" className="hover:text-gray-900 transition">FAQs</a></li>
@@ -37,9 +77,11 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Know Helios */}
+                    {/* Company Information Section */}
                     <div>
-                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Know Helios</h3>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">
+                            Know Helios
+                        </h3>
                         <ul className="space-y-2">
                             <li><a href="#" className="hover:text-gray-900 transition">About Us</a></li>
                             <li><a href="#" className="hover:text-gray-900 transition">Corporate Information</a></li>
@@ -49,9 +91,11 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Legal */}
+                    {/* Legal Information Section */}
                     <div>
-                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Legal</h3>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">
+                            Legal
+                        </h3>
                         <ul className="space-y-2">
                             <li><a href="#" className="hover:text-gray-900 transition">Privacy Policy</a></li>
                             <li><a href="#" className="hover:text-gray-900 transition">Terms of Service</a></li>
@@ -60,16 +104,22 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Contact Us */}
+                    {/* Contact Information Section */}
                     <div>
-                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Contact Us</h3>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">
+                            Contact Us
+                        </h3>
                         <ul className="space-y-2">
                             <li className="text-gray-800">Helios Customer Care</li>
                             <li>
-                                <a href="tel:+919355401889" className="text-blue-600 hover:underline">+91-9355401889</a>
+                                <a href="tel:+919355401889" className="text-blue-600 hover:underline">
+                                    +91-9355401889
+                                </a>
                             </li>
                             <li>
-                                <a href="mailto:support@helios.com" className="text-blue-600 hover:underline">support@helios.com</a>
+                                <a href="mailto:support@helios.com" className="text-blue-600 hover:underline">
+                                    support@helios.com
+                                </a>
                             </li>
                             <li className="mt-4">
                                 <p className="text-gray-600">Registered Office:</p>
@@ -78,9 +128,11 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Follow Us */}
+                    {/* Social Media and App Section */}
                     <div>
-                        <h3 className="text-gray-900 uppercase font-semibold mb-3">Connect With Us</h3>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">
+                            Connect With Us
+                        </h3>
                         <div className="flex space-x-4 mb-4">
                             <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
                                 <FaTwitter />
@@ -93,7 +145,9 @@ const Footer = () => {
                             </a>
                         </div>
                         <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-gray-900 mb-2">Download Our App</h4>
+                            <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                                Download Our App
+                            </h4>
                             <div className="flex gap-2">
                                 <a href="#">
                                     <img src="/app-store.svg" alt="App Store" className="h-10" />
@@ -106,7 +160,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                {/* Payment & Copyright */}
+                {/* Payment Methods and Copyright Section */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex gap-4 flex-wrap">
