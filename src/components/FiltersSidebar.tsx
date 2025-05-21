@@ -19,8 +19,7 @@ const FilterSection = ({ title, children, isOpen, toggleOpen }) => (
 const ColorSwatch = ({ color, onClick, isSelected }) => (
     <button
         onClick={onClick}
-        className={`relative w-8 h-8 rounded-full border-2 ${isSelected ? 'border-gray-700' : 'border-gray-200'
-            } shadow-sm hover:shadow-md transition-all`}
+        className={`relative w-8 h-8 rounded-full border-2 ${isSelected ? 'border-gray-700' : 'border-gray-200'}`}
         style={{ backgroundColor: color.toLowerCase() }}
         title={color}
     >
@@ -30,44 +29,130 @@ const ColorSwatch = ({ color, onClick, isSelected }) => (
     </button>
 );
 
-const FiltersSidebar = ({
-    // State props
-    selectedBrands,
-    setSelectedBrands,
-    selectedDialColors,
-    setSelectedDialColors,
-    selectedDialShapes,
-    setSelectedDialShapes,
-    selectedStrapColors,
-    setSelectedStrapColors,
-    selectedStrapMaterials,
-    setSelectedStrapMaterials,
-    selectedDialThicknesses,
-    setSelectedDialThicknesses,
-    priceRange,
-    setPriceRange
-}) => {
-    const [openSection, setOpenSection] = useState(null);
+// Define filter options for each category
+export const filterOptions = {
+    watches: {
+        brands: ['Rolex', 'Omega', 'Casio', 'Fossil', 'Titan', 'Seiko', 'Timex', 'Citizen'],
+        dialColors: ['Black', 'Blue', 'Silver', 'Gold', 'White', 'Rose Gold'],
+        dialShapes: ['Round', 'Square', 'Rectangle', 'Oval', 'Tonneau'],
+        strapColors: ['Black', 'Brown', 'Silver', 'Gold', 'Blue'],
+        strapMaterials: ['Leather', 'Metal', 'Nylon', 'Silicone', 'Ceramic'],
+        movements: ['Automatic', 'Quartz', 'Mechanical', 'Smart']
+    },
+    shoes: {
+        brands: ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance'],
+        types: ['Sneakers', 'Formal', 'Sports', 'Casual', 'Boots'],
+        colors: ['Black', 'White', 'Blue', 'Red', 'Grey', 'Brown'],
+        sizes: ['6', '7', '8', '9', '10', '11', '12'],
+        materials: ['Leather', 'Canvas', 'Suede', 'Mesh', 'Synthetic'],
+        closureTypes: ['Lace-up', 'Slip-on', 'Velcro', 'Buckle', 'Zip']
+    },
+    bags: {
+        brands: ['Coach', 'Michael Kors', 'Louis Vuitton', 'Gucci', 'Prada'],
+        types: ['Handbag', 'Backpack', 'Tote', 'Clutch', 'Shoulder Bag'],
+        colors: ['Black', 'Brown', 'Tan', 'Navy', 'Red', 'White'],
+        materials: ['Leather', 'Canvas', 'Nylon', 'Suede', 'Synthetic'],
+        sizes: ['Small', 'Medium', 'Large', 'Extra Large'],
+        styles: ['Casual', 'Formal', 'Sports', 'Travel', 'Evening']
+    },
+    fashion: {
+        brands: ['Zara', 'H&M', 'Uniqlo', 'Levi\'s', 'Nike'],
+        types: ['T-Shirts', 'Shirts', 'Pants', 'Dresses', 'Jackets'],
+        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        colors: ['Black', 'White', 'Blue', 'Red', 'Grey'],
+        materials: ['Cotton', 'Polyester', 'Wool', 'Linen', 'Denim'],
+        styles: ['Casual', 'Formal', 'Sports', 'Ethnic', 'Party']
+    },
+    electronics: {
+        brands: ['Apple', 'Samsung', 'Sony', 'Bose', 'JBL'],
+        types: ['Headphones', 'Earbuds', 'Speakers', 'Chargers', 'Power Banks'],
+        colors: ['Black', 'White', 'Grey', 'Blue', 'Rose Gold'],
+        features: ['Wireless', 'Noise Cancelling', 'Water Resistant', 'Fast Charging'],
+        warranty: ['6 Months', '1 Year', '2 Years', '3 Years']
+    },
+    accessories: {
+        brands: ['Ray-Ban', 'Fossil', 'Gucci', 'Prada', 'Hermès'],
+        types: ['Sunglasses', 'Belts', 'Wallets', 'Scarves', 'Hats'],
+        colors: ['Black', 'Brown', 'Gold', 'Silver', 'Multi'],
+        materials: ['Leather', 'Metal', 'Plastic', 'Fabric', 'Wood'],
+        styles: ['Casual', 'Formal', 'Sports', 'Luxury', 'Vintage']
+    }
+};
 
-    const filterOptions = {
-        brands: ['Titan', 'Casio', 'Fossil', 'Rolex', 'Timex', 'Seiko', 'Citizen', 'Omega', 'Tag Heuer', 'Movado', 'Michael Kors', 'Diesel'],
-        dialColors: ['Black', 'Blue', 'Silver', 'Gold', 'White', 'Rose Gold', 'Green', 'Grey', 'Brown', 'Champagne'],
-        dialShapes: ['Round', 'Square', 'Rectangle', 'Oval', 'Tonneau', 'Cushion', 'Pilot', 'Skeleton', 'Chronograph', 'Diamond'],
-        strapColors: ['Black', 'Brown', 'Silver', 'Gold', 'Blue', 'Red', 'Green', 'Grey', 'Two-tone', 'Transparent'],
-        strapMaterials: ['Leather', 'Metal', 'Nylon', 'Silicone', 'Ceramic', 'Titanium', 'Stainless Steel', 'Rubber', 'Carbon Fiber', 'Alligator'],
-        dialThickness: ['Thin (<8mm)', 'Medium (8-12mm)', 'Thick (>12mm)', 'Ultra Thin (<6mm)', 'Heavy Duty (>15mm)']
+interface FiltersSidebarProps {
+    category: 'watches' | 'shoes' | 'bags' | 'fashion' | 'electronics' | 'accessories';
+    selectedFilters: {
+        [key: string]: string[];
     };
+    setSelectedFilters: (filters: any) => void;
+    priceRange?: number[];
+    setPriceRange?: (range: number[]) => void;
+    isMobile?: boolean;
+}
 
-    const toggleSection = (section) => {
+const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
+    category,
+    selectedFilters,
+    setSelectedFilters,
+    priceRange = [0, 1000000],
+    setPriceRange = () => { },
+    isMobile = false
+}) => {
+    const [openSection, setOpenSection] = useState<string | null>(null);
+    const currentFilters = filterOptions[category];
+
+    const toggleSection = (section: string) => {
         setOpenSection(openSection === section ? null : section);
     };
 
+    const updateFilter = (filterType: string, value: string) => {
+        setSelectedFilters(prev => ({
+            ...prev,
+            [filterType]: prev[filterType].includes(value)
+                ? prev[filterType].filter(item => item !== value)
+                : [...prev[filterType], value]
+        }));
+    };
+
+    const renderFilterSection = (title: string, filterType: string, options: string[], type: 'color' | 'checkbox' = 'checkbox') => (
+        <FilterSection
+            title={title}
+            isOpen={openSection === filterType}
+            toggleOpen={() => toggleSection(filterType)}
+        >
+            <div className={`${type === 'color' ? 'grid grid-cols-5 gap-3' : 'space-y-2'}`}>
+                {type === 'color' ? (
+                    options.map(color => (
+                        <ColorSwatch
+                            key={color}
+                            color={color}
+                            isSelected={selectedFilters[filterType]?.includes(color)}
+                            onClick={() => updateFilter(filterType, color)}
+                        />
+                    ))
+                ) : (
+                    options.map(option => (
+                        <label key={option} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
+                            <input
+                                type="checkbox"
+                                className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                                checked={selectedFilters[filterType]?.includes(option)}
+                                onChange={() => updateFilter(filterType, option)}
+                            />
+                            <span className="text-gray-700 text-sm">{option}</span>
+                        </label>
+                    ))
+                )}
+            </div>
+        </FilterSection>
+    );
+
     return (
-        <div className="bg-gray-50 p-6 rounded-xl shadow-lg border border-gray-100 h-fit sticky top-8">
+        <div className={`bg-white p-6 rounded-xl shadow-lg border border-gray-200 ${!isMobile ? 'h-fit sticky top-8' : ''}`}>
             <h3 className="text-xl font-bold mb-6 text-gray-800">Filter Products</h3>
 
             <div className="space-y-6">
-                {/* Price Filter */}
+                {/* Price Range Filter */}
                 <FilterSection
                     title="PRICE RANGE"
                     isOpen={openSection === 'price'}
@@ -75,15 +160,15 @@ const FiltersSidebar = ({
                 >
                     <div className="space-y-4">
                         <div className="flex justify-between text-sm text-gray-600">
-                            <span>₹{priceRange[0].toLocaleString()}</span>
-                            <span>₹{priceRange[1].toLocaleString()}</span>
+                            <span>₹{priceRange[0]?.toLocaleString()}</span>
+                            <span>₹{priceRange[1]?.toLocaleString()}</span>
                         </div>
                         <input
                             type="range"
                             min="0"
-                            max="10000000"
+                            max="1000000"
                             step="1000"
-                            className="w-full range-slider"
+                            className="w-full"
                             value={priceRange[1]}
                             onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                         />
@@ -91,20 +176,20 @@ const FiltersSidebar = ({
                             <input
                                 type="number"
                                 value={priceRange[0]}
-                                onChange={(e) => setPriceRange([Math.min(Number(e.target.value), priceRange[1]), priceRange[1]])}
+                                onChange={(e) => setPriceRange([
+                                    Math.min(Number(e.target.value), priceRange[1]),
+                                    priceRange[1]
+                                ])}
                                 className="w-1/2 p-2 border rounded-lg text-sm"
                                 placeholder="Min"
                             />
                             <input
                                 type="number"
                                 value={priceRange[1]}
-                                onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    if (!isNaN(value) && value >= 0) {
-                                        setPriceRange([priceRange[0], Math.max(value, priceRange[0])]);
-                                    }
-                                }}
-
+                                onChange={(e) => setPriceRange([
+                                    priceRange[0],
+                                    Math.max(Number(e.target.value), priceRange[0])
+                                ])}
                                 className="w-1/2 p-2 border rounded-lg text-sm"
                                 placeholder="Max"
                             />
@@ -112,173 +197,27 @@ const FiltersSidebar = ({
                     </div>
                 </FilterSection>
 
-                {/* Brands */}
-                <FilterSection
-                    title="BRANDS"
-                    isOpen={openSection === 'brands'}
-                    toggleOpen={() => toggleSection('brands')}
-                >
-                    <div className="max-h-60 overflow-y-auto">
-                        {filterOptions.brands.map(brand => (
-                            <label key={brand} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
-                                    checked={selectedBrands.includes(brand)}
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            setSelectedBrands([...selectedBrands, brand]);
-                                        } else {
-                                            setSelectedBrands(selectedBrands.filter(b => b !== brand));
-                                        }
-                                    }}
-                                />
-                                <span className="text-gray-700 text-sm">{brand}</span>
-                            </label>
-                        ))}
-                    </div>
-                </FilterSection>
-
-                {/* Dial Color */}
-                <FilterSection
-                    title="DIAL COLOR"
-                    isOpen={openSection === 'dialColor'}
-                    toggleOpen={() => toggleSection('dialColor')}
-                >
-                    <div className="grid grid-cols-5 gap-3">
-                        {filterOptions.dialColors.map(color => (
-                            <ColorSwatch
-                                key={color}
-                                color={color}
-                                isSelected={selectedDialColors.includes(color)}
-                                onClick={() => {
-                                    setSelectedDialColors(prev =>
-                                        prev.includes(color)
-                                            ? prev.filter(c => c !== color)
-                                            : [...prev, color]
-                                    );
-                                }}
-                            />
-                        ))}
-                    </div>
-                </FilterSection>
-
-                {/* Dial Shape */}
-                <FilterSection
-                    title="DIAL SHAPE"
-                    isOpen={openSection === 'dialShape'}
-                    toggleOpen={() => toggleSection('dialShape')}
-                >
-                    <div className="grid grid-cols-2 gap-2">
-                        {filterOptions.dialShapes.map(shape => (
-                            <label key={shape} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
-                                    checked={selectedDialShapes.includes(shape)}
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            setSelectedDialShapes([...selectedDialShapes, shape]);
-                                        } else {
-                                            setSelectedDialShapes(selectedDialShapes.filter(s => s !== shape));
-                                        }
-                                    }}
-                                />
-                                <span className="text-gray-700 text-sm">{shape}</span>
-                            </label>
-                        ))}
-                    </div>
-                </FilterSection>
-
-                {/* Strap Color */}
-                <FilterSection
-                    title="STRAP COLOR"
-                    isOpen={openSection === 'strapColor'}
-                    toggleOpen={() => toggleSection('strapColor')}
-                >
-                    <div className="grid grid-cols-5 gap-3">
-                        {filterOptions.strapColors.map(color => (
-                            <ColorSwatch
-                                key={color}
-                                color={color}
-                                isSelected={selectedStrapColors.includes(color)}
-                                onClick={() => {
-                                    setSelectedStrapColors(prev =>
-                                        prev.includes(color)
-                                            ? prev.filter(c => c !== color)
-                                            : [...prev, color]
-                                    );
-                                }}
-                            />
-                        ))}
-                    </div>
-                </FilterSection>
-
-                {/* Strap Material */}
-                <FilterSection
-                    title="STRAP MATERIAL"
-                    isOpen={openSection === 'strapMaterial'}
-                    toggleOpen={() => toggleSection('strapMaterial')}
-                >
-                    <div className="grid grid-cols-2 gap-2">
-                        {filterOptions.strapMaterials.map(material => (
-                            <label key={material} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
-                                    checked={selectedStrapMaterials.includes(material)}
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            setSelectedStrapMaterials([...selectedStrapMaterials, material]);
-                                        } else {
-                                            setSelectedStrapMaterials(selectedStrapMaterials.filter(m => m !== material));
-                                        }
-                                    }}
-                                />
-                                <span className="text-gray-700 text-sm">{material}</span>
-                            </label>
-                        ))}
-                    </div>
-                </FilterSection>
-
-                {/* Dial Thickness */}
-                <FilterSection
-                    title="DIAL THICKNESS"
-                    isOpen={openSection === 'dialThickness'}
-                    toggleOpen={() => toggleSection('dialThickness')}
-                >
-                    <div className="space-y-2">
-                        {filterOptions.dialThickness.map(thickness => (
-                            <label key={thickness} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
-                                    checked={selectedDialThicknesses.includes(thickness)}
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            setSelectedDialThicknesses([...selectedDialThicknesses, thickness]);
-                                        } else {
-                                            setSelectedDialThicknesses(selectedDialThicknesses.filter(t => t !== thickness));
-                                        }
-                                    }}
-                                />
-                                <span className="text-gray-700 text-sm">{thickness}</span>
-                            </label>
-                        ))}
-                    </div>
-                </FilterSection>
+                {/* Category-specific filters */}
+                {Object.entries(currentFilters).map(([filterType, options]) => (
+                    renderFilterSection(
+                        filterType.toUpperCase(),
+                        filterType,
+                        options as string[],
+                        ['colors', 'dialColors', 'strapColors'].includes(filterType) ? 'color' : 'checkbox'
+                    )
+                ))}
             </div>
 
             {/* Clear All Button */}
             <button
                 onClick={() => {
-                    setSelectedBrands([]);
-                    setSelectedDialColors([]);
-                    setSelectedDialShapes([]);
-                    setSelectedStrapColors([]);
-                    setSelectedStrapMaterials([]);
-                    setSelectedDialThicknesses([]);
-                    setPriceRange([0, 10000000]);
+                    setSelectedFilters(
+                        Object.keys(currentFilters).reduce((acc, key) => ({
+                            ...acc,
+                            [key]: []
+                        }), {})
+                    );
+                    setPriceRange([0, 1000000]);
                 }}
                 className="w-full mt-6 py-2 px-4 text-sm font-medium text-red-600 hover:text-red-700 border border-red-100 hover:border-red-200 rounded-lg transition-colors"
             >

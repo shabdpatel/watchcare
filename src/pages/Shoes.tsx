@@ -18,17 +18,24 @@ export const shoeFilters = {
     sizes: ['6', '7', '8', '9', '10', '11', '12'],
     colors: ['Black', 'Brown', 'White', 'Blue', 'Red', 'Grey'],
     materials: ['Leather', 'Canvas', 'Suede', 'Synthetic', 'Mesh'],
-    brands: ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', 'Converse']
+    brands: ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', 'Converse'],
+    priceRanges: [
+        { min: 0, max: 2000 },
+        { min: 2000, max: 5000 },
+        { min: 5000, max: 10000 },
+        { min: 10000, max: 100000 }
+    ]
 };
 
 const Shoes = () => {
     const [sortOption, setSortOption] = useState('bestsellers');
-    const [selectedBrands, setSelectedBrands] = useState([]);
-    const [selectedShoeTypes, setSelectedShoeTypes] = useState([]);
-    const [priceRange, setPriceRange] = useState([0, 100000]);
-    const [selectedSizes, setSelectedSizes] = useState([]);
-    const [selectedColors, setSelectedColors] = useState([]);
-    const [selectedMaterials, setSelectedMaterials] = useState([]);
+    const [filters, setFilters] = useState({
+        shoeTypes: [],
+        brands: [],
+        sizes: [],
+        colors: [],
+        materials: []
+    });
     const [wishlist, setWishlist] = useState([]);
     const [selectedShoe, setSelectedShoe] = useState(null);
     const [cart, setCart] = useState([]);
@@ -37,6 +44,7 @@ const Shoes = () => {
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [allShoes, setAllShoes] = useState([]);
+    const [priceRange, setPriceRange] = useState([0, 100000]);
 
     useEffect(() => {
         const fetchShoes = async () => {
@@ -59,6 +67,14 @@ const Shoes = () => {
 
         fetchShoes();
     }, []);
+
+    useEffect(() => {
+        if (isFiltersOpen || isSortOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+    }, [isFiltersOpen, isSortOpen]);
 
     const toggleWishlist = (shoeId) => {
         setWishlist(prev =>
@@ -102,7 +118,7 @@ const Shoes = () => {
             }
 
             // Brand filtering
-            if (selectedBrands.length > 0 && !selectedBrands.includes(shoe.Company)) {
+            if (filters.brands.length > 0 && !filters.brands.includes(shoe.Company)) {
                 return false;
             }
 
@@ -113,12 +129,12 @@ const Shoes = () => {
             }
 
             // Size filtering
-            if (selectedSizes.length > 0 && !selectedSizes.includes(shoe.ShoeSize)) {
+            if (filters.sizes.length > 0 && !filters.sizes.includes(shoe.ShoeSize)) {
                 return false;
             }
 
             // Color filtering
-            if (selectedColors.length > 0 && !selectedColors.includes(shoe.Color)) {
+            if (filters.colors.length > 0 && !filters.colors.includes(shoe.Color)) {
                 return false;
             }
 
@@ -143,8 +159,65 @@ const Shoes = () => {
 
     const filteredShoes = sortShoes(filterShoes(allShoes));
 
+    const BreadcrumbAndSort = () => (
+        <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="text-sm text-gray-600">
+                    <Link to="/" className="hover:text-gray-900">HOME</Link>
+                    <span className="mx-2">/</span>
+                    <span className="text-gray-900 font-medium">ALL SHOES</span>
+                </div>
+
+                <div className="hidden lg:flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+                    <div className="text-sm text-gray-600">
+                        ITEMS {filteredShoes.length} OF {allShoes.length}
+                    </div>
+
+                    <div className="relative">
+                        <select
+                            value={sortOption}
+                            onChange={(e) => setSortOption(e.target.value)}
+                            className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="bestsellers">SORT BY BESTSELLERS</option>
+                            <option value="price-low-high">Price: Low to High</option>
+                            <option value="price-high-low">Price: High to Low</option>
+                            <option value="newest">Newest Arrivals</option>
+                            <option value="rating">Customer Rating</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="bg-gray-100 min-h-screen text-gray-900">
+            {/* Add this mobile filter/sort bar */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg">
+                <div className="flex justify-between p-4 gap-2">
+                    <button
+                        onClick={() => setIsFiltersOpen(true)}
+                        className="flex-1 py-3 px-4 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                    >
+                        <FunnelIcon className="w-5 h-5 text-gray-700" />
+                        <span className="text-gray-700 font-medium">Filters</span>
+                    </button>
+                    <button
+                        onClick={() => setIsSortOpen(true)}
+                        className="flex-1 py-3 px-4 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                    >
+                        <ArrowsUpDownIcon className="w-5 h-5 text-gray-700" />
+                        <span className="text-gray-700 font-medium">Sort</span>
+                    </button>
+                </div>
+            </div>
+
             {/* Category Selection */}
             <div className="text-center py-8">
                 <div className="inline-block">
@@ -205,16 +278,9 @@ const Shoes = () => {
                     {/* Filters */}
                     <div className="hidden lg:block">
                         <FiltersSidebar
-                            selectedBrands={selectedBrands}
-                            setSelectedBrands={setSelectedBrands}
-                            selectedShoeTypes={selectedShoeTypes}
-                            setSelectedShoeTypes={setSelectedShoeTypes}
-                            selectedSizes={selectedSizes}
-                            setSelectedSizes={setSelectedSizes}
-                            selectedColors={selectedColors}
-                            setSelectedColors={setSelectedColors}
-                            selectedMaterials={selectedMaterials}
-                            setSelectedMaterials={setSelectedMaterials}
+                            category="shoes"
+                            selectedFilters={filters}
+                            setSelectedFilters={setFilters}
                             priceRange={priceRange}
                             setPriceRange={setPriceRange}
                         />
@@ -222,59 +288,157 @@ const Shoes = () => {
 
                     {/* Product Grid */}
                     <div className="flex-1">
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <BreadcrumbAndSort />
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             {filteredShoes.map((shoe) => (
                                 <Link
                                     to={`/details/${shoe.collectionName}/${shoe.id}`}
-                                    key={shoe.id}
-                                    className="group"
+                                    key={`${shoe.collectionName}-${shoe.id}`}
                                 >
-                                    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                                        <div className="relative aspect-square">
-                                            <img
-                                                src={shoe.Image}
-                                                alt={shoe.Company}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            />
-                                            <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        toggleWishlist(shoe.id);
-                                                    }}
-                                                    className="p-2 rounded-full bg-white/80 hover:bg-white"
-                                                >
-                                                    {wishlist.includes(shoe.id) ? (
-                                                        <HeartSolidIcon className="w-5 h-5 text-red-500" />
-                                                    ) : (
-                                                        <HeartIcon className="w-5 h-5" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="p-4">
-                                            <h3 className="text-lg font-medium">{shoe.Company}</h3>
-                                            <p className="text-gray-600">₹{shoe.Price}</p>
-                                            <div className="flex items-center mt-2">
-                                                {renderRating(shoe.rating)}
-                                            </div>
+                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
+                                        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    toggleWishlist(shoe.id);
+                                                }}
+                                                className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
+                                            >
+                                                {wishlist.includes(shoe.id) ? (
+                                                    <HeartSolidIcon className="w-5 h-5 text-red-500" />
+                                                ) : (
+                                                    <HeartIcon className="w-5 h-5 text-gray-800" />
+                                                )}
+                                            </button>
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     addToCart(shoe);
                                                 }}
-                                                className="mt-3 w-full py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                                                className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
                                             >
-                                                Add to Cart
+                                                <ShoppingBagIcon className="w-5 h-5 text-gray-800" />
                                             </button>
+                                        </div>
+
+                                        <div className="aspect-square overflow-hidden relative">
+                                            <img
+                                                src={shoe.Image || shoe.images?.[0]}
+                                                alt={shoe.Company}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                        </div>
+
+                                        <div className="p-4 space-y-1">
+                                            <div className="flex justify-between items-start">
+                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900">
+                                                    {shoe.Company}
+                                                </h3>
+                                                <div className="flex items-center gap-1">
+                                                    {renderRating(shoe.rating || 0)}
+                                                </div>
+                                            </div>
+                                            <p className="text-gray-600 text-lg font-light">Rs. {shoe.Price}</p>
+                                            <p className="text-gray-500 text-sm line-clamp-2">{shoe.Description}</p>
+                                            <div className="flex gap-2 mt-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        addToCart(shoe);
+                                                    }}
+                                                    className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
+                                                >
+                                                    Buy Now
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </Link>
                             ))}
                         </div>
+                        {filteredShoes.length === 0 && (
+                            <div className="col-span-full text-center py-12 flex flex-col items-center justify-center">
+                                <h3 className="text-lg font-medium text-gray-700">No shoes match your filters</h3>
+                                <p className="text-gray-500 mt-2">Try adjusting your filter criteria</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
+            {isFiltersOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 bg-white">
+                    <div className="h-full flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Shoe Filters</h2>
+                            <button
+                                onClick={() => setIsFiltersOpen(false)}
+                                className="p-2 text-gray-500 hover:text-gray-700"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <FiltersSidebar
+                                category="shoes"
+                                selectedFilters={filters}
+                                setSelectedFilters={setFilters}
+                                priceRange={priceRange}
+                                setPriceRange={setPriceRange}
+                                isMobile={true}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Mobile Sort Overlay */}
+            {isSortOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 bg-white">
+                    <div className="h-full flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                            <h2 className="text-xl font-semibold text-gray-800">Sort By</h2>
+                            <button
+                                onClick={() => setIsSortOpen(false)}
+                                className="p-2 text-gray-500 hover:text-gray-700"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <div className="space-y-4">
+                                {[
+                                    { value: 'bestsellers', label: 'Bestsellers' },
+                                    { value: 'price-low-high', label: 'Price: Low to High' },
+                                    { value: 'price-high-low', label: 'Price: High to Low' },
+                                    { value: 'newest', label: 'Newest Arrivals' },
+                                    { value: 'rating', label: 'Customer Rating' },
+                                ].map((option) => (
+                                    <button
+                                        key={option.value}
+                                        onClick={() => {
+                                            setSortOption(option.value);
+                                            setIsSortOpen(false);
+                                        }}
+                                        className={`w-full text-left p-3 rounded-lg ${sortOption === option.value
+                                            ? 'bg-gray-800 text-white'
+                                            : 'bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setIsSortOpen(false)}
+                                className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                Apply Sorting
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

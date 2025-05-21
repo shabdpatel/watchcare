@@ -13,16 +13,32 @@ import {
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 
+// First, update the watch-specific filters at the top of the file
+const watchFilters = {
+    brands: ['Rolex', 'Omega', 'Casio', 'Fossil', 'Titan', 'Seiko', 'Timex', 'Citizen'],
+    dialColors: ['Black', 'Blue', 'Silver', 'Gold', 'White', 'Rose Gold'],
+    dialShapes: ['Round', 'Square', 'Rectangle', 'Oval', 'Tonneau'],
+    strapColors: ['Black', 'Brown', 'Silver', 'Gold', 'Blue', 'Rose Gold'],
+    strapMaterials: ['Leather', 'Metal', 'Nylon', 'Silicone', 'Ceramic'],
+    movements: ['Automatic', 'Quartz', 'Mechanical', 'Smart'],
+    features: ['Water Resistant', 'Chronograph', 'Date Display', 'GPS', 'Heart Rate Monitor'],
+    collections: ['Luxury', 'Sport', 'Casual', 'Formal', 'Smart']
+};
+
 const AllWatches = () => {
-    // Inside your AllWatches component
+    // Update state declarations
+    const [filters, setFilters] = useState({
+        brands: [],
+        dialColors: [],
+        dialShapes: [],
+        strapColors: [],
+        strapMaterials: [],
+        movements: [],
+        features: [],
+        collections: []
+        // Remove priceRange from here since we're managing it separately
+    });
     const [sortOption, setSortOption] = useState('bestsellers');
-    const [selectedBrands, setSelectedBrands] = useState([]);
-    const [selectedDialColors, setSelectedDialColors] = useState([]);
-    const [priceRange, setPriceRange] = useState([0, 10000000]);
-    const [selectedDialShapes, setSelectedDialShapes] = useState([]);
-    const [selectedStrapColors, setSelectedStrapColors] = useState([]);
-    const [selectedStrapMaterials, setSelectedStrapMaterials] = useState([]);
-    const [selectedDialThicknesses, setSelectedDialThicknesses] = useState([]);
     const [wishlist, setWishlist] = useState([]);
     const [selectedWatch, setSelectedWatch] = useState(null);
     const [cart, setCart] = useState([]);
@@ -33,6 +49,7 @@ const AllWatches = () => {
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [allWatches, setAllWatches] = useState([]);
+    const [priceRange, setPriceRange] = useState([0, 1000000]);
 
     useEffect(() => {
         const fetchWatches = async () => {
@@ -161,27 +178,11 @@ const AllWatches = () => {
         }
     };
 
-    // Add this filtering function inside your AllWatches component, before the return statement
+    // Update the filter function
     const filterWatches = (watches) => {
         return watches.filter(watch => {
-            // Category filtering
-            if (selectedCategory !== 'all') {
-                switch (selectedCategory) {
-                    case 'men':
-                        if (watch.Gender !== 'Male') return false;
-                        break;
-                    case 'women':
-                        if (watch.Gender !== 'Female') return false;
-                        break;
-                    case 'smart':
-                        // Check if it's a smart watch based on Movement type or CollectionType
-                        if (watch.Movement !== 'Smart' && watch.CollectionType !== 'Smart') return false;
-                        break;
-                }
-            }
-
             // Brand filtering
-            if (selectedBrands.length > 0 && !selectedBrands.includes(watch.Company)) {
+            if (filters.brands.length > 0 && !filters.brands.includes(watch.Company)) {
                 return false;
             }
 
@@ -191,24 +192,38 @@ const AllWatches = () => {
                 return false;
             }
 
-            // Other existing filters...
-            if (selectedDialColors.length > 0 && watch.DialColor &&
-                !selectedDialColors.includes(watch.DialColor)) {
+            // Dial Color filtering
+            if (filters.dialColors.length > 0 && !filters.dialColors.includes(watch.DialColor)) {
                 return false;
             }
 
-            if (selectedDialShapes.length > 0 && watch.DialShape &&
-                !selectedDialShapes.includes(watch.DialShape)) {
+            // Dial Shape filtering
+            if (filters.dialShapes.length > 0 && !filters.dialShapes.includes(watch.DialShape)) {
                 return false;
             }
 
-            if (selectedStrapColors.length > 0 && watch.StrapColor &&
-                !selectedStrapColors.includes(watch.StrapColor)) {
+            // Strap Color filtering
+            if (filters.strapColors.length > 0 && !filters.strapColors.includes(watch.StrapColor)) {
                 return false;
             }
 
-            if (selectedStrapMaterials.length > 0 && watch.StrapMaterial &&
-                !selectedStrapMaterials.includes(watch.StrapMaterial)) {
+            // Strap Material filtering
+            if (filters.strapMaterials.length > 0 && !filters.strapMaterials.includes(watch.StrapMaterial)) {
+                return false;
+            }
+
+            // Movement filtering
+            if (filters.movements.length > 0 && !filters.movements.includes(watch.Movement)) {
+                return false;
+            }
+
+            // Features filtering
+            if (filters.features.length > 0 && !filters.features.some(feature => watch.Features?.includes(feature))) {
+                return false;
+            }
+
+            // Collection filtering
+            if (filters.collections.length > 0 && !filters.collections.includes(watch.Collection)) {
                 return false;
             }
 
@@ -285,7 +300,7 @@ const AllWatches = () => {
                 <div className="lg:hidden fixed inset-0 z-50 bg-white">
                     <div className="h-full flex flex-col">
                         <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                            <h2 className="text-xl font-semibold text-gray-800">Filters</h2>
+                            <h2 className="text-xl font-semibold text-gray-800">Watch Filters</h2>
                             <button
                                 onClick={() => setIsFiltersOpen(false)}
                                 className="p-2 text-gray-500 hover:text-gray-700"
@@ -295,29 +310,13 @@ const AllWatches = () => {
                         </div>
                         <div className="flex-1 overflow-y-auto p-4">
                             <FiltersSidebar
-                                selectedBrands={selectedBrands}
-                                setSelectedBrands={setSelectedBrands}
-                                selectedDialColors={selectedDialColors}
-                                setSelectedDialColors={setSelectedDialColors}
-                                selectedDialShapes={selectedDialShapes}
-                                setSelectedDialShapes={setSelectedDialShapes}
-                                selectedStrapColors={selectedStrapColors}
-                                setSelectedStrapColors={setSelectedStrapColors}
-                                selectedStrapMaterials={selectedStrapMaterials}
-                                setSelectedStrapMaterials={setSelectedStrapMaterials}
-                                selectedDialThicknesses={selectedDialThicknesses}
-                                setSelectedDialThicknesses={setSelectedDialThicknesses}
+                                category="watches"
+                                selectedFilters={filters}
+                                setSelectedFilters={setFilters}
                                 priceRange={priceRange}
                                 setPriceRange={setPriceRange}
+                                isMobile={true}
                             />
-                        </div>
-                        <div className="p-4 border-t border-gray-200 bg-white">
-                            <button
-                                onClick={() => setIsFiltersOpen(false)}
-                                className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                            >
-                                Apply Filters
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -428,20 +427,12 @@ const AllWatches = () => {
                     {/* Desktop Filters - Add hidden lg:block wrapper */}
                     <div className="hidden lg:block">
                         <FiltersSidebar
-                            selectedBrands={selectedBrands}
-                            setSelectedBrands={setSelectedBrands}
-                            selectedDialColors={selectedDialColors}
-                            setSelectedDialColors={setSelectedDialColors}
-                            selectedDialShapes={selectedDialShapes}
-                            setSelectedDialShapes={setSelectedDialShapes}
-                            selectedStrapColors={selectedStrapColors}
-                            setSelectedStrapColors={setSelectedStrapColors}
-                            selectedStrapMaterials={selectedStrapMaterials}
-                            setSelectedStrapMaterials={setSelectedStrapMaterials}
-                            selectedDialThicknesses={selectedDialThicknesses}
-                            setSelectedDialThicknesses={setSelectedDialThicknesses}
+                            category="watches"
+                            selectedFilters={filters}
+                            setSelectedFilters={setFilters}
                             priceRange={priceRange}
                             setPriceRange={setPriceRange}
+                            isMobile={false}
                         />
                     </div>
                     <div className="flex-1">

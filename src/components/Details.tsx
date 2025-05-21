@@ -5,6 +5,167 @@ import { useEffect, useState } from "react";
 import { HeartIcon, ShoppingBagIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 
+// Define specifications for each product type
+const productSpecs = {
+    Watches: {
+        technical: [
+            { label: 'Watch Glass/Crystal', key: 'Glass' },
+            { label: 'Movement', key: 'Movement' },
+            { label: 'Warranty', key: 'Warranty' },
+            { label: 'Water Resistance', key: 'WaterResistance' },
+            { label: 'Hand Type', key: 'HandType' },
+            { label: 'Style', key: 'Style' },
+            { label: 'Occasion', key: 'Occasion' },
+            { label: 'Band Style', key: 'BandStyle' },
+            { label: 'Case Material', key: 'CaseMaterial' }
+        ],
+        brand: [
+            { label: 'Brand', key: 'Brand' },
+            { label: 'Collection', key: 'Collection' },
+            { label: 'Country of Origin', key: 'CountryOfOrigin' },
+            { label: 'Manufacturer', key: 'ManufacturedBy' },
+            { label: 'Imported By', key: 'ImportedBy' },
+            { label: 'Global Identifier', key: 'GlobalIdentifier' }
+        ],
+        dial: [
+            { label: 'Dial Shape', key: 'DialShape' },
+            { label: 'Dial Color', key: 'DialColor' },
+            { label: 'Secondary Dial Color', key: 'SecondaryDialColor' },
+            { label: 'Dial Type', key: 'DialType' },
+            { label: 'Dial Diameter', key: 'DialDiameter' },
+            { label: 'Dial Thickness', key: 'DialThickness' }
+        ],
+        strap: [
+            { label: 'Strap Color', key: 'StrapColor' },
+            { label: 'Secondary Strap Color', key: 'SecondaryStrapColor' },
+            { label: 'Strap Material', key: 'StrapMaterial' },
+            { label: 'Strap Width', key: 'StrapWidth' }
+        ]
+    },
+    Shoes: {
+        technical: [
+            { label: 'Style', key: 'Style' },
+            { label: 'Closure Type', key: 'ClosureType' },
+            { label: 'Sole Material', key: 'SoleMaterial' },
+            { label: 'Heel Height', key: 'HeelHeight' },
+            { label: 'Shoe Type', key: 'ShoeType' },
+            { label: 'Occasion', key: 'Occasion' }
+        ],
+        brand: [
+            { label: 'Brand', key: 'Brand' },
+            { label: 'Collection', key: 'Collection' },
+            { label: 'Country of Origin', key: 'CountryOfOrigin' },
+            { label: 'Manufacturer', key: 'Manufacturer' }
+        ],
+        material: [
+            { label: 'Upper Material', key: 'UpperMaterial' },
+            { label: 'Inner Material', key: 'InnerMaterial' },
+            { label: 'Sole Material', key: 'SoleMaterial' }
+        ],
+        fit: [
+            { label: 'Size', key: 'Size' },
+            { label: 'Width', key: 'Width' },
+            { label: 'Arch Type', key: 'ArchType' },
+            { label: 'Gender', key: 'Gender' }
+        ]
+    },
+    Bags: {
+        technical: [
+            { label: 'Style', key: 'Style' },
+            { label: 'Closure Type', key: 'ClosureType' },
+            { label: 'Capacity', key: 'Capacity' },
+            { label: 'Number of Compartments', key: 'Compartments' },
+            { label: 'Water Resistant', key: 'WaterResistant' }
+        ],
+        brand: [
+            { label: 'Brand', key: 'Brand' },
+            { label: 'Collection', key: 'Collection' },
+            { label: 'Country of Origin', key: 'CountryOfOrigin' },
+            { label: 'Manufacturer', key: 'Manufacturer' }
+        ],
+        material: [
+            { label: 'Material', key: 'Material' },
+            { label: 'Lining Material', key: 'LiningMaterial' },
+            { label: 'Hardware Material', key: 'HardwareMaterial' }
+        ],
+        dimensions: [
+            { label: 'Length', key: 'Length' },
+            { label: 'Width', key: 'Width' },
+            { label: 'Height', key: 'Height' },
+            { label: 'Handle Drop', key: 'HandleDrop' }
+        ]
+    },
+    Fashion: {
+        technical: [
+            { label: 'Style', key: 'Style' },
+            { label: 'Fit Type', key: 'FitType' },
+            { label: 'Sleeve Length', key: 'SleeveLength' },
+            { label: 'Neck Type', key: 'NeckType' },
+            { label: 'Pattern', key: 'Pattern' }
+        ],
+        brand: [
+            { label: 'Brand', key: 'Brand' },
+            { label: 'Collection', key: 'Collection' },
+            { label: 'Country of Origin', key: 'CountryOfOrigin' },
+            { label: 'Manufacturer', key: 'Manufacturer' }
+        ],
+        material: [
+            { label: 'Material', key: 'Material' },
+            { label: 'Fabric Type', key: 'FabricType' },
+            { label: 'Care Instructions', key: 'CareInstructions' }
+        ],
+        size: [
+            { label: 'Size', key: 'Size' },
+            { label: 'Fit', key: 'Fit' },
+            { label: 'Gender', key: 'Gender' }
+        ]
+    },
+    Electronics: {
+        technical: [
+            { label: 'Type', key: 'Type' },
+            { label: 'Model', key: 'Model' },
+            { label: 'Connectivity', key: 'Connectivity' },
+            { label: 'Battery Life', key: 'BatteryLife' },
+            { label: 'Features', key: 'Features' }
+        ],
+        brand: [
+            { label: 'Brand', key: 'Brand' },
+            { label: 'Series', key: 'Series' },
+            { label: 'Country of Origin', key: 'CountryOfOrigin' },
+            { label: 'Warranty', key: 'Warranty' }
+        ],
+        specs: [
+            { label: 'Power Output', key: 'PowerOutput' },
+            { label: 'Frequency Response', key: 'FrequencyResponse' },
+            { label: 'Driver Size', key: 'DriverSize' }
+        ]
+    },
+    Accessories: {
+        technical: [
+            { label: 'Type', key: 'Type' },
+            { label: 'Style', key: 'Style' },
+            { label: 'Closure Type', key: 'ClosureType' },
+            { label: 'Occasion', key: 'Occasion' }
+        ],
+        brand: [
+            { label: 'Brand', key: 'Brand' },
+            { label: 'Collection', key: 'Collection' },
+            { label: 'Country of Origin', key: 'CountryOfOrigin' },
+            { label: 'Manufacturer', key: 'Manufacturer' }
+        ],
+        material: [
+            { label: 'Material', key: 'Material' },
+            { label: 'Finish', key: 'Finish' },
+            { label: 'Hardware Material', key: 'HardwareMaterial' }
+        ],
+        dimensions: [
+            { label: 'Size', key: 'Size' },
+            { label: 'Length', key: 'Length' },
+            { label: 'Width', key: 'Width' }
+        ]
+    }
+};
+
 const Detail = () => {
     const { collectionName, id } = useParams();
     const [watch, setWatch] = useState(null);
@@ -68,6 +229,33 @@ const Detail = () => {
         return [...Array(5)].map((_, i) => (
             <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`}>&#9733;</span>
         ));
+    };
+
+    const renderSpecifications = (product, category) => {
+        const specs = productSpecs[category];
+        if (!specs) return null;
+
+        return (
+            <div className="space-y-8 pt-8">
+                <h2 className="text-2xl font-bold border-b pb-2">MORE INFORMATION</h2>
+
+                {Object.entries(specs).map(([sectionName, fields]) => (
+                    <div key={sectionName} className="space-y-4">
+                        <h3 className="text-xl font-semibold uppercase">{sectionName}</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {fields.map(({ label, key }) => (
+                                product[key] && (
+                                    <div key={key}>
+                                        <p className="text-sm text-gray-500">{label}</p>
+                                        <p className="font-medium">{product[key]}</p>
+                                    </div>
+                                )
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
     };
 
     if (!watch) return (
@@ -180,137 +368,8 @@ const Detail = () => {
                                 </div>
                             </div>
 
-                            {/* MORE INFORMATION SECTION */}
-                            <div className="space-y-8 pt-8">
-                                <h2 className="text-2xl font-bold border-b pb-2">MORE INFORMATION</h2>
-
-                                {/* Technical Specifications */}
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Watch Glass/Crystal</p>
-                                            <p className="font-medium">{watch.Glass}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Movement</p>
-                                            <p className="font-medium">{watch.Movement}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Warranty</p>
-                                            <p className="font-medium">{watch.Warranty}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Water Resistance</p>
-                                            <p className="font-medium">{watch.WaterResistance}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Hand Type</p>
-                                            <p className="font-medium">{watch.HandType}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Style</p>
-                                            <p className="font-medium">{watch.Style}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Occasion</p>
-                                            <p className="font-medium">{watch.Occasion}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Band Style</p>
-                                            <p className="font-medium">{watch.BandStyle}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Case Material</p>
-                                            <p className="font-medium">{watch.CaseMaterial}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Brand Details */}
-                                <div className="space-y-4">
-                                    <h3 className="text-xl font-semibold">BRAND DETAILS</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Brand</p>
-                                            <p className="font-medium">{watch.Brand}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Collection</p>
-                                            <p className="font-medium">{watch.Collection}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Country of Origin</p>
-                                            <p className="font-medium">{watch.CountryOfOrigin}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Manufacturer</p>
-                                            <p className="font-medium">{watch.ManufacturedBy}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Imported By</p>
-                                            <p className="font-medium">{watch.ImportedBy}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Global Identifier</p>
-                                            <p className="font-medium">{watch.GlobalIdentifier}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Dial Details */}
-                                <div className="space-y-4">
-                                    <h3 className="text-xl font-semibold">DIAL</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Dial Shape</p>
-                                            <p className="font-medium">{watch.DialShape}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Dial Color</p>
-                                            <p className="font-medium">{watch.DialColor}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Secondary Dial Color</p>
-                                            <p className="font-medium">{watch.SecondaryDialColor}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Dial Type</p>
-                                            <p className="font-medium">{watch.DialType}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Dial Diameter</p>
-                                            <p className="font-medium">{watch.DialDiameter}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Dial Thickness</p>
-                                            <p className="font-medium">{watch.DialThickness}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Strap Details */}
-                                <div className="space-y-4">
-                                    <h3 className="text-xl font-semibold">STRAP</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Strap Color</p>
-                                            <p className="font-medium">{watch.StrapColor}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Secondary Strap Color</p>
-                                            <p className="font-medium">{watch.SecondaryStrapColor}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Strap Material</p>
-                                            <p className="font-medium">{watch.StrapMaterial}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Strap Width</p>
-                                            <p className="font-medium">{watch.StrapWidth}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* Dynamic Specifications Section */}
+                            {renderSpecifications(watch, collectionName)}
 
                             {/* Delivery Options */}
                             <div className="bg-gray-50 p-6 rounded-xl space-y-4">

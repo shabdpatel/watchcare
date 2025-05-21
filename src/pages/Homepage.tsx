@@ -1,389 +1,568 @@
-import { useRef, useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
-import image from "../assets/main.jpg";
-import { HeartIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
-import Form from "./form";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import {
+    ClockIcon,
+    ShoppingBagIcon,
+    DevicePhoneMobileIcon,
+    GiftIcon,
+    UserGroupIcon,
+    ShieldCheckIcon,
+    TruckIcon,
+    CreditCardIcon,
+    ArrowRightIcon,
+    HeartIcon,
+    SparklesIcon,
+    FaceSmileIcon,
+    AcademicCapIcon,
+    BanknotesIcon,
+    StarIcon,
+    ChevronRightIcon,
+    PlayCircleIcon,
+    ChatBubbleLeftIcon
+} from '@heroicons/react/24/outline';
+
+import {
+    FaFacebook,
+    FaInstagram,
+    FaTwitter,
+    FaShoePrints
+} from 'react-icons/fa';
 
 const Homepage = () => {
-    const trendingRef = useRef(null);
-    const [trendingWatches, setTrendingWatches] = useState([]);
-    const [exclusiveWatches, setExclusiveWatches] = useState([]);
-    const [smartWatches, setSmartWatches] = useState([]);
-    const [trendingVisible, setTrendingVisible] = useState(8);
-    const [exclusiveVisible, setExclusiveVisible] = useState(8);
-    const [smartVisible, setSmartVisible] = useState(8);
-    const [wishlist, setWishlist] = useState([]);
-    const [selectedWatch, setSelectedWatch] = useState(null);
-    const [cart, setCart] = useState([]);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [selectedService, setSelectedService] = useState(null);
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    const categories = [
+        {
+            name: 'Watches',
+            image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e',
+            description: 'Luxury timepieces from leading brands'
+        },
+        {
+            name: 'Fashion',
+            image: 'https://images.unsplash.com/photo-1445205170230-053b83016050',
+            description: 'Premium apparel collection'
+        },
+        {
+            name: 'Electronics',
+            image: 'https://images.unsplash.com/photo-1468495244123-6c6c332eeece',
+            description: 'High-end tech accessories'
+        }
+    ];
 
-    useEffect(() => {
-        const fetchCollection = async (collectionName, setter) => {
-            try {
-                const querySnapshot = await getDocs(collection(db, collectionName));
-                const watches = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    collectionName: collectionName, // Add collection name to each watch object
-                    ...doc.data(),
-                }));
-                setter(watches);
-            } catch (error) {
-                console.error(`Error fetching ${collectionName}:`, error);
-            }
-        };
+    const featuredProducts = [
+        {
+            name: 'Premium Chronograph',
+            price: '₹49,999',
+            tag: 'Bestseller',
+            image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
+        },
+        {
+            name: 'Smart Watch Pro',
+            price: '₹29,999',
+            tag: 'New Arrival',
+            image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12'
+        },
+        {
+            name: 'Limited Edition Watch',
+            price: '₹89,999',
+            tag: 'Exclusive',
+            image: 'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6'
+        }
+    ];
 
-        fetchCollection("Trending watches", setTrendingWatches);
-        fetchCollection("Exclusive Watches", setExclusiveWatches);
-        fetchCollection("Smart Watches", setSmartWatches);
-    }, []);
-    const toggleWishlist = (watchId) => {
-        setWishlist(prev =>
-            prev.includes(watchId)
-                ? prev.filter(id => id !== watchId)
-                : [...prev, watchId]
-        );
-    };
+    const trendingProducts = [
+        {
+            name: 'Smart Watch Pro',
+            price: '₹29,999',
+            tag: 'New Arrival',
+            image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12'
+        },
+        {
+            name: 'Designer Clutch',
+            price: '₹8,999',
+            tag: 'Bestseller',
+            image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c'
+        },
+        {
+            name: 'Premium Earbuds',
+            price: '₹14,999',
+            tag: 'Limited Edition',
+            image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df'
+        }
+    ];
 
-    const addToCart = (watch) => {
-        setCart(prev => [...prev, { ...watch, quantity: 1 }]);
-    };
+    const blogPosts = [
+        {
+            title: 'How to Choose the Perfect Watch',
+            category: 'Style Guide',
+            image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e',
+            date: 'May 15, 2024'
+        },
+        {
+            title: 'Summer Fashion Trends 2024',
+            category: 'Fashion',
+            image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b',
+            date: 'May 18, 2024'
+        }
+    ];
 
-    const renderRating = (rating) => {
-        return [...Array(5)].map((_, i) => (
-            <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`}>&#9733;</span>
-        ));
-    };
+    const brands = [
+        { name: 'Brand 1', logo: 'https://cdn-icons-png.flaticon.com/512/732/732084.png' },
+        { name: 'Brand 2', logo: 'https://cdn-icons-png.flaticon.com/512/732/732083.png' },
+        { name: 'Brand 3', logo: 'https://cdn-icons-png.flaticon.com/512/732/732087.png' },
+        { name: 'Brand 4', logo: 'https://cdn-icons-png.flaticon.com/512/732/732085.png' }
+    ];
 
-    const handleServiceClick = (service) => {
-        setSelectedService(service);
-        setIsFormOpen(true);
-    };
+    const testimonials = [
+        {
+            text: 'The quality exceeded my expectations! Fast shipping and excellent customer service.',
+            author: 'Rahul Sharma',
+            role: 'Premium Member'
+        },
+        {
+            text: 'Best place to find luxury items at reasonable prices. Highly recommended!',
+            author: 'Priya Patel',
+            role: 'Fashion Blogger'
+        }
+    ];
 
-    const renderCollectionSection = (watches, visible, setVisible, title) => (
-        <>
-            <div className="text-center py-8">
-                <div className="inline-block">
-                    <h2 className="text-3xl font-light uppercase tracking-widest text-gray-300">
-                        {title}
-                    </h2>
-                    <hr className="border-gray-600 mt-3 mx-auto w-1/2" />
+    const newArrivals = [
+        {
+            name: 'Luxury Chronograph',
+            price: '₹79,999',
+            image: 'https://images.unsplash.com/photo-1622434641406-a158123450f9',
+            brand: 'Swiss Elite'
+        },
+        {
+            name: 'Smart Fashion Watch',
+            price: '₹34,999',
+            image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a',
+            brand: 'TechStyle'
+        }
+    ];
+
+    const collections = [
+        {
+            name: 'Summer Collection',
+            description: 'Light and stylish pieces for the season',
+            image: 'https://images.unsplash.com/photo-1549972574-8e3e1ed6a347'
+        },
+        {
+            name: 'Luxury Edition',
+            description: 'Premium timepieces for connoisseurs',
+            image: 'https://images.unsplash.com/photo-1606604830262-2e0732b12acc'
+        }
+    ];
+
+    return (
+        <div className="min-h-screen bg-gray-100">
+            {/* Hero Section */}
+            <div className="relative h-[90vh] bg-black">
+                <div className="absolute inset-0">
+                    <img
+                        src="https://images.unsplash.com/photo-1523275335684-37898b6baf30"
+                        alt="Hero"
+                        className="w-full h-full object-cover opacity-60"
+                    />
+                </div>
+                <div className="relative h-full flex items-center">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                        <h1 className="text-5xl md:text-7xl font-light text-white uppercase tracking-wider">
+                            Timeless Elegance
+                        </h1>
+                        <p className="text-xl text-gray-300 max-w-2xl tracking-wide">
+                            Discover our curated collection of premium watches and lifestyle accessories
+                        </p>
+                        <button className="bg-white text-gray-900 px-8 py-4 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors">
+                            Explore Collection
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {watches.slice(0, visible).map((watch) => (
-                        <Link to={`/details/${watch.collectionName}/${watch.id}`} key={watch.id}>
-                            <div
-                                key={watch.id}
-                                className="group relative bg-black rounded-lg overflow-hidden border border-gray-800 hover:border-gray-500 transition-all duration-300"
-                            >
-                                {watch.tags && (
-                                    <div className="absolute top-2 left-2 flex gap-2 z-10">
-                                        {watch.tags.map((tag, index) => (
-                                            <span
-                                                key={index}
-                                                className="px-2 py-1 text-xs uppercase rounded-full bg-opacity-90"
-                                                style={{ backgroundColor: tag.color }}
-                                            >
-                                                {tag.label}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
+            {/* New Flash Sale Banner */}
+            <div className="bg-red-600 text-white py-3">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex items-center justify-center gap-4">
+                        <span className="text-lg font-semibold">Flash Sale - Up to 50% Off!</span>
+                        <span className="bg-white text-red-600 px-3 py-1 rounded-full text-sm font-bold">24:00:00</span>
+                        <button className="text-sm underline">Shop Now</button>
+                    </div>
+                </div>
+            </div>
 
-                                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                    <button
-                                        onClick={() => toggleWishlist(watch.id)}
-                                        className="p-2 rounded-full bg-gray-900/50 hover:bg-gray-800/70 backdrop-blur-sm"
-                                    >
-                                        {wishlist.includes(watch.id) ? (
-                                            <HeartSolidIcon className="w-5 h-5 text-red-500" />
-                                        ) : (
-                                            <HeartIcon className="w-5 h-5 text-white" />
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={() => addToCart(watch)}
-                                        className="p-2 rounded-full bg-gray-900/50 hover:bg-gray-800/70 backdrop-blur-sm"
-                                    >
-                                        <ShoppingBagIcon className="w-5 h-5 text-white" />
+            {/* Value Propositions */}
+            <div className="bg-white py-16">
+                <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+                    <div className="text-center">
+                        <TruckIcon className="w-12 h-12 mx-auto text-gray-900 mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Free Shipping</h3>
+                        <p className="text-gray-600">On all orders over ₹15,000</p>
+                    </div>
+                    <div className="text-center">
+                        <SparklesIcon className="w-12 h-12 mx-auto text-gray-900 mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Authentic Products</h3>
+                        <p className="text-gray-600">100% genuine items guaranteed</p>
+                    </div>
+                    <div className="text-center">
+                        <BanknotesIcon className="w-12 h-12 mx-auto text-gray-900 mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Easy Returns</h3>
+                        <p className="text-gray-600">30-day return policy</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Categories */}
+            <div className="bg-white py-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-3xl font-light uppercase tracking-wider text-gray-900 text-center mb-12">
+                        Shop By Category
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {categories.map((category) => (
+                            <Link
+                                key={category.name}
+                                to={`/category/${category.name.toLowerCase()}`}
+                                className="group relative aspect-[4/5] overflow-hidden rounded-lg"
+                            >
+                                <img
+                                    src={category.image}
+                                    alt={category.name}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-4">
+                                    <h3 className="text-2xl font-light text-white uppercase tracking-wider mb-2">
+                                        {category.name}
+                                    </h3>
+                                    <p className="text-gray-200 text-sm text-center">
+                                        {category.description}
+                                    </p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Featured Products */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div className="flex justify-between items-center mb-12">
+                    <h2 className="text-3xl font-light uppercase tracking-wider text-gray-900">
+                        Featured Collection
+                    </h2>
+                    <Link
+                        to="/all-watches"
+                        className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
+                    >
+                        View All <ArrowRightIcon className="w-4 h-4" />
+                    </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {featuredProducts.map((product) => (
+                        <div key={product.name} className="group">
+                            <div className="relative aspect-square overflow-hidden bg-gray-100 rounded-lg">
+                                <img
+                                    src={product.image}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute top-4 left-4">
+                                    <span className="bg-white/80 backdrop-blur-sm px-4 py-1 text-xs uppercase tracking-wider">
+                                        {product.tag}
+                                    </span>
+                                </div>
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button className="p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white">
+                                        <HeartIcon className="w-5 h-5" />
                                     </button>
                                 </div>
+                            </div>
+                            <div className="mt-4 space-y-1">
+                                <h3 className="text-lg font-medium">{product.name}</h3>
+                                <p className="text-gray-600">{product.price}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-                                <div className="aspect-square overflow-hidden relative">
+            {/* New Trending Products Section */}
+            <div className="bg-white py-16">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold mb-2">Trending Now</h2>
+                            <p className="text-gray-600">Discover what's hot this season</p>
+                        </div>
+                        <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+                            View All <ChevronRightIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {trendingProducts.map((product) => (
+                            <div key={product.name} className="group relative">
+                                <div className="relative overflow-hidden rounded-lg aspect-square">
                                     <img
-                                        src={watch.Image}
-                                        alt={watch.Company}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                        src={product.image}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                    <div className="absolute top-4 left-4">
+                                        <span className="bg-white px-3 py-1 rounded-full text-sm font-medium">
+                                            {product.tag}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    <h3 className="text-lg font-medium">{product.name}</h3>
+                                    <p className="text-gray-600">{product.price}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* New Video Section */}
+            <div className="relative h-[60vh] bg-black">
+                <div className="absolute inset-0">
+                    <img
+                        src="https://images.unsplash.com/photo-1523275335684-37898b6baf30"
+                        alt="Video Background"
+                        className="w-full h-full object-cover opacity-50"
+                    />
+                </div>
+                <div className="relative h-full flex items-center justify-center text-center">
+                    <div className="space-y-6">
+                        <PlayCircleIcon className="w-20 h-20 text-white mx-auto cursor-pointer hover:scale-110 transition-transform" />
+                        <h2 className="text-4xl font-bold text-white">Discover Our Story</h2>
+                        <p className="text-gray-300 max-w-2xl mx-auto">
+                            Experience luxury craftsmanship and timeless elegance
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* New Blog Section */}
+            <div className="max-w-7xl mx-auto px-4 py-16">
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl font-bold mb-4">From Our Blog</h2>
+                    <p className="text-gray-600">Latest updates from the world of fashion and lifestyle</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {blogPosts.map((post) => (
+                        <div key={post.title} className="group cursor-pointer">
+                            <div className="relative overflow-hidden rounded-lg aspect-[16/9]">
+                                <img
+                                    src={post.image}
+                                    alt={post.title}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
+                            </div>
+                            <div className="mt-4">
+                                <span className="text-sm text-gray-500">{post.category} • {post.date}</span>
+                                <h3 className="text-xl font-semibold mt-2 group-hover:text-gray-600">{post.title}</h3>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Brand Showcase */}
+            <div className="py-16 bg-white">
+                <div className="max-w-7xl mx-auto px-4">
+                    <h3 className="text-center text-gray-500 text-sm font-semibold mb-8">TRUSTED BY LEADING BRANDS</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        {brands.map((brand) => (
+                            <img
+                                key={brand.name}
+                                src={brand.logo}
+                                alt={brand.name}
+                                className="h-12 w-full object-contain opacity-50 hover:opacity-100 transition-opacity"
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <div className="text-center">
+                        <ShieldCheckIcon className="w-10 h-10 mx-auto text-gray-700 mb-3" />
+                        <h3 className="text-sm uppercase tracking-wider">Authentic Products</h3>
+                    </div>
+                    <div className="text-center">
+                        <TruckIcon className="w-10 h-10 mx-auto text-gray-700 mb-3" />
+                        <h3 className="text-sm uppercase tracking-wider">Free Shipping</h3>
+                    </div>
+                    <div className="text-center">
+                        <CreditCardIcon className="w-10 h-10 mx-auto text-gray-700 mb-3" />
+                        <h3 className="text-sm uppercase tracking-wider">Secure Payment</h3>
+                    </div>
+                    <div className="text-center">
+                        <ShoppingBagIcon className="w-10 h-10 mx-auto text-gray-700 mb-3" />
+                        <h3 className="text-sm uppercase tracking-wider">Easy Returns</h3>
+                    </div>
+                </div>
+            </div>
+
+            {/* New Arrivals Banner */}
+            <div className="bg-gray-900 py-20">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl font-light text-white uppercase tracking-wider mb-4">
+                            New Arrivals
+                        </h2>
+                        <p className="text-gray-400">Be the first to discover our latest additions</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {newArrivals.map((item) => (
+                            <div key={item.name} className="group cursor-pointer">
+                                <div className="relative aspect-square overflow-hidden rounded-lg">
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                    <div className="absolute bottom-6 left-6 right-6">
+                                        <p className="text-gray-300 text-sm mb-2">{item.brand}</p>
+                                        <h3 className="text-white text-xl font-medium mb-2">{item.name}</h3>
+                                        <p className="text-white font-light">{item.price}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Collection Showcase */}
+            <div className="py-20">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {collections.map((collection) => (
+                            <div key={collection.name} className="group relative overflow-hidden rounded-lg">
+                                <div className="aspect-[16/9]">
+                                    <img
+                                        src={collection.image}
+                                        alt={collection.name}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                 </div>
-
-                                <div className="p-4 space-y-1">
-                                    <div className="flex justify-between items-start">
-                                        <h3 className="text-xl font-medium uppercase tracking-wide">
-                                            {watch.Company}
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                    <div className="text-center">
+                                        <h3 className="text-2xl font-light text-white uppercase tracking-wider mb-2">
+                                            {collection.name}
                                         </h3>
-                                        <div className="flex items-center gap-1">
-                                            {renderRating(watch.rating || 0)}
-                                        </div>
-                                    </div>
-                                    <p className="text-gray-400 text-lg font-light">Rs. {watch.Price}</p>
-                                    <p className="text-gray-500 text-sm line-clamp-2">{watch.Description}</p>
-                                    <div className="flex gap-2 mt-2">
-                                        <button
-                                            onClick={() => addToCart(watch)}
-                                            className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-700 rounded-md hover:bg-gray-800/30 transition-colors duration-300 flex items-center justify-center gap-2"
-                                        >
-                                            Buy Now
+                                        <p className="text-gray-200 mb-4">{collection.description}</p>
+                                        <button className="bg-white text-gray-900 px-6 py-2 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors">
+                                            Explore
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </Link>
-                    ))}
-                </div>
-
-                {visible < watches.length && (
-                    <div className="flex justify-center mt-8">
-                        <button
-                            onClick={() => setVisible(prev => prev + 8)}
-                            className="px-8 py-2 border border-gray-600 rounded-full hover:bg-gray-800/30 transition-colors duration-300 uppercase text-sm tracking-widest"
-                        >
-                            See More
-                        </button>
-                    </div>
-                )}
-            </div>
-        </>
-    );
-
-    const renderServiceSection = () => (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center">
-                <h2 className="text-3xl font-light uppercase tracking-widest text-gray-300">
-                    Our Services
-                </h2>
-                <hr className="border-gray-600 mt-3 mx-auto w-1/2" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-                <div
-                    className="bg-gray-900 p-6 rounded-lg border border-gray-800 hover:border-gray-500 transition-all duration-300 cursor-pointer"
-                    onClick={() => handleServiceClick("Watch Preparation")}
-                >
-                    <div className="text-center">
-                        <h3 className="text-xl font-medium uppercase tracking-wide text-gray-300">
-                            Watch Preparation
-                        </h3>
-                        <p className="text-gray-400 mt-2">
-                            We ensure your smartwatch is fully charged, updated, and ready to use upon delivery.
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    className="bg-gray-900 p-6 rounded-lg border border-gray-800 hover:border-gray-500 transition-all duration-300 cursor-pointer"
-                    onClick={() => handleServiceClick("Personal Modification")}
-                >
-                    <div className="text-center">
-                        <h3 className="text-xl font-medium uppercase tracking-wide text-gray-300">
-                            Personal Modification
-                        </h3>
-                        <p className="text-gray-400 mt-2">
-                            Customize your smartwatch with personalized settings, watch faces, and more.
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    className="bg-gray-900 p-6 rounded-lg border border-gray-800 hover:border-gray-500 transition-all duration-300 cursor-pointer"
-                    onClick={() => handleServiceClick("Extended Warranty")}
-                >
-                    <div className="text-center">
-                        <h3 className="text-xl font-medium uppercase tracking-wide text-gray-300">
-                            Extended Warranty
-                        </h3>
-                        <p className="text-gray-400 mt-2">
-                            Get extended warranty coverage for your smartwatch for added peace of mind.
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    className="bg-gray-900 p-6 rounded-lg border border-gray-800 hover:border-gray-500 transition-all duration-300 cursor-pointer"
-                    onClick={() => handleServiceClick("Repair & Maintenance")}
-                >
-                    <div className="text-center">
-                        <h3 className="text-xl font-medium uppercase tracking-wide text-gray-300">
-                            Repair & Maintenance
-                        </h3>
-                        <p className="text-gray-400 mt-2">
-                            Professional repair and maintenance services to keep your smartwatch in top condition.
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    className="bg-gray-900 p-6 rounded-lg border border-gray-800 hover:border-gray-500 transition-all duration-300 cursor-pointer"
-                    onClick={() => handleServiceClick("Software Updates")}
-                >
-                    <div className="text-center">
-                        <h3 className="text-xl font-medium uppercase tracking-wide text-gray-300">
-                            Software Updates
-                        </h3>
-                        <p className="text-gray-400 mt-2">
-                            Regular software updates to ensure your smartwatch has the latest features and security patches.
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    className="bg-gray-900 p-6 rounded-lg border border-gray-800 hover:border-gray-500 transition-all duration-300 cursor-pointer"
-                    onClick={() => handleServiceClick("Data Migration")}
-                >
-                    <div className="text-center">
-                        <h3 className="text-xl font-medium uppercase tracking-wide text-gray-300">
-                            Data Migration
-                        </h3>
-                        <p className="text-gray-400 mt-2">
-                            Seamless data migration from your old smartwatch to your new one.
-                        </p>
+                        ))}
                     </div>
                 </div>
             </div>
-        </div>
-    );
 
-    return (
-        <div className="bg-black min-h-screen text-white">
-            <div className="relative h-screen min-h-[500px] overflow-hidden">
-                <div className="absolute inset-0 overflow-hidden">
-                    <img
-                        src={image}
-                        alt="Luxury Watches"
-                        className="w-full h-full object-cover object-center animate-kenburns"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/50 to-transparent" />
-                </div>
-
-                <div className="relative h-full flex items-center">
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                        <div className="max-w-2xl space-y-6 animate-slide-up">
-                            <div className="overflow-hidden">
-                                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4">
-                                    <span className="inline-block bg-gradient-to-r from-amber-300 to-rose-500 bg-clip-text text-transparent">
-                                        Luxury
-                                    </span>
-                                    <span className="text-white ml-4">Redefined</span>
-                                </h1>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 sm:w-16 h-px bg-rose-500" />
-                                <p className="text-lg sm:text-xl md:text-2xl font-light text-gray-300 tracking-wide">
-                                    Where Precision Meets Elegance
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                                <button
-                                    className="px-6 sm:px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-full transition-all duration-300 transform hover:scale-105 uppercase tracking-widest text-sm font-medium"
-                                    onClick={() => window.scrollTo({ top: trendingRef.current.offsetTop, behavior: "smooth" })}
-                                >
-                                    Explore Collection
-                                </button>
-                                <button className="px-6 sm:px-8 py-3 border border-gray-600 hover:border-rose-500 text-gray-300 hover:text-rose-400 rounded-full transition-all duration-300 uppercase tracking-widest text-sm font-medium">
-                                    Custom Designs
-                                </button>
-                            </div>
-
-                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:block">
-                                <div className="animate-bounce w-6 h-6 border-2 border-rose-500 rounded-full" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 sm:w-1/3 max-w-[400px] md:max-w-[600px] hidden lg:block animate-float">
-                    <img
-                        src={image}
-                        alt="Premium Watch"
-                        className="w-full h-auto object-contain"
-                    />
-                </div>
-            </div>
-
-            {renderCollectionSection(trendingWatches, trendingVisible, setTrendingVisible, "Trending Collection")}
-            {renderCollectionSection(exclusiveWatches, exclusiveVisible, setExclusiveVisible, "Exclusive Collection")}
-            {renderCollectionSection(smartWatches, smartVisible, setSmartVisible, "Smart Watches")}
-
-            {renderServiceSection()}
-
-            {isFormOpen && (
-                <Form
-                    selectedService={selectedService}
-                    onClose={() => setIsFormOpen(false)}
-                />
-            )}
-
-            {selectedWatch && (
-                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-                    <div className="bg-gray-900 rounded-lg max-w-3xl w-full p-6 flex gap-6">
-                        <div className="w-1/2 relative">
-                            <div className="aspect-square overflow-hidden rounded-lg">
-                                <img
-                                    src={selectedWatch.images?.[currentImageIndex] || selectedWatch.Image}
-                                    alt={selectedWatch.Company}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                            <div className="flex gap-2 mt-4">
-                                {selectedWatch.images?.map((img, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setCurrentImageIndex(index)}
-                                        className={`w-16 h-16 rounded border-2 ${index === currentImageIndex
-                                            ? 'border-gray-300'
-                                            : 'border-transparent'
-                                            }`}
-                                    >
-                                        <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="w-1/2 space-y-4">
-                            <h3 className="text-2xl font-bold">{selectedWatch.Company}</h3>
-                            <p className="text-gray-400 text-xl">Rs. {selectedWatch.Price}</p>
-                            <div className="flex items-center gap-1">
-                                {renderRating(selectedWatch.rating || 0)}
-                                <span className="text-gray-500 text-sm ml-2">({selectedWatch.reviews} reviews)</span>
-                            </div>
-                            <p className="text-gray-300">{selectedWatch.Description}</p>
-                            <button
-                                onClick={() => addToCart(selectedWatch)}
-                                className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
-                            >
-                                <ShoppingBagIcon className="w-5 h-5" />
-                                Buy Now
-                            </button>
-                            <button
-                                onClick={() => setSelectedWatch(null)}
-                                className="absolute top-4 right-4 p-2 rounded-full bg-gray-800 hover:bg-gray-700"
-                            >
-                                ✕
+            {/* Newsletter Section */}
+            <div className="bg-gray-100 py-20">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="max-w-2xl mx-auto text-center">
+                        <h2 className="text-3xl font-light uppercase tracking-wider text-gray-900 mb-4">
+                            Stay Updated
+                        </h2>
+                        <p className="text-gray-600 mb-8">
+                            Subscribe to our newsletter for exclusive offers, new arrivals, and insider news
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <input
+                                type="email"
+                                placeholder="Enter your email"
+                                className="px-6 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 flex-1 max-w-md"
+                            />
+                            <button className="bg-gray-900 text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors">
+                                Subscribe
                             </button>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+
+            {/* Shopping Benefits */}
+            <div className="bg-white py-16">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <ShieldCheckIcon className="w-8 h-8 text-gray-900" />
+                            </div>
+                            <h3 className="text-sm font-medium uppercase tracking-wider">Secure Shopping</h3>
+                            <p className="text-gray-600 text-sm mt-2">100% Protected Payments</p>
+                        </div>
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <SparklesIcon className="w-8 h-8 text-gray-900" />
+                            </div>
+                            <h3 className="text-sm font-medium uppercase tracking-wider">Premium Quality</h3>
+                            <p className="text-gray-600 text-sm mt-2">Guaranteed Authenticity</p>
+                        </div>
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <TruckIcon className="w-8 h-8 text-gray-900" />
+                            </div>
+                            <h3 className="text-sm font-medium uppercase tracking-wider">Fast Delivery</h3>
+                            <p className="text-gray-600 text-sm mt-2">Express Shipping Options</p>
+                        </div>
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <HeartIcon className="w-8 h-8 text-gray-900" />
+                            </div>
+                            <h3 className="text-sm font-medium uppercase tracking-wider">Customer Love</h3>
+                            <p className="text-gray-600 text-sm mt-2">4.8/5 Average Rating</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            {/* Footer */}
+            <footer className="bg-gray-900 text-white pt-16">
+                <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 pb-8">
+                    <div>
+                        <h3 className="text-xl font-bold mb-4">Luxury Store</h3>
+                        <p className="text-gray-400">Curating premium lifestyle products since 2018</p>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold mb-4">Customer Service</h4>
+                        <ul className="space-y-2">
+                            <li><Link to="/contact" className="text-gray-400 hover:text-white">Contact Us</Link></li>
+                            <li><Link to="/shipping" className="text-gray-400 hover:text-white">Shipping Policy</Link></li>
+                            <li><Link to="/returns" className="text-gray-400 hover:text-white">Return Policy</Link></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold mb-4">Company</h4>
+                        <ul className="space-y-2">
+                            <li><Link to="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
+                            <li><Link to="/careers" className="text-gray-400 hover:text-white">Careers</Link></li>
+                            <li><Link to="/blog" className="text-gray-400 hover:text-white">Blog</Link></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold mb-4">Connect</h4>
+                        <div className="flex gap-4">
+                            <FaFacebook className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
+                            <FaInstagram className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
+                            <FaTwitter className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
+                        </div>
+                    </div>
+                </div>
+                <div className="border-t border-gray-800 mt-8 py-8 text-center">
+                    <p className="text-gray-400">&copy; 2024 Luxury Store. All rights reserved</p>
+                </div>
+            </footer>
         </div>
     );
 };

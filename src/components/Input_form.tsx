@@ -786,6 +786,22 @@ const InputForm = () => {
                                             />
                                         </div>
                                     </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Sole Material</label>
+                                        <select
+                                            name="soleMaterial"
+                                            value={formData.soleMaterial}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        >
+                                            <option value="">Select Sole Material</option>
+                                            {['Rubber', 'PU', 'EVA', 'TPR', 'Leather', 'Phylon'].map(option => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         )}
