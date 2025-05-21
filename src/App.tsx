@@ -17,6 +17,9 @@ import Register from "./components/Register";
 import { AuthProvider, useAuth } from './components/AuthContext';
 import UserOnboarding from './components/UserOnboarding';
 import Favicon from './components/Favicon';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import InstallPrompt from './components/InstallPrompt';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -63,6 +66,8 @@ function App() {
   return (
     <AuthProvider>
       <Favicon />
+      <InstallPrompt />
+      <ToastContainer />
       <AppContent />
     </AuthProvider>
   );
