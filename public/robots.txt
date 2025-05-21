@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+Disallow: /checkout/
+Sitemap: https://unboxing-store.com/sitemap.xml
