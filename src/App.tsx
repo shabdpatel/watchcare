@@ -16,6 +16,7 @@ import Profile from "./components/Profile";
 import Register from "./components/Register";
 import { AuthProvider, useAuth } from './components/AuthContext';
 import UserOnboarding from './components/UserOnboarding';
+import Favicon from './components/Favicon';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -61,6 +62,7 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
+      <Favicon />
       <AppContent />
     </AuthProvider>
   );
