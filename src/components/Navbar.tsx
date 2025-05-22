@@ -6,30 +6,40 @@ import { HiShoppingBag } from "react-icons/hi2";
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);  // Add this state
+
+    // Add scroll event listener
+    React.useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 0);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const navItems = [
         { name: 'WATCHES', path: '/all_watches' },
         { name: 'SHOES', path: '/shoes' },
         { name: 'FASHION', path: '/fashion' },
-        { name: 'SMART', path: '/smart' },
         { name: 'ELECTRONICS', path: '/electronics' },
-        { name: 'BECOME SELLER', path: '/input' },
-        { name: 'OFFERS', path: '/offers' }
+        { name: 'BAGS', path: '/bags' },
+        { name: 'ACCESSORIES', path: '/accessories' },
+        { name: 'BECOME SELLER', path: '/input' }
     ];
 
     return (
-        <nav className="fixed w-full bg-white z-50 shadow-sm">
+        <nav className={`fixed w-full bg-white z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-md' : 'shadow-sm'}`}>
             {/* Top Banner */}
-            <div className="bg-black text-white text-center py-2 text-xs font-medium">
+            <div className="bg-black text-white text-center py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium">
                 40+ INTERNATIONAL BRANDS
             </div>
 
             {/* Main Nav */}
-            <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-                <div className="flex items-center justify-between h-16">
+            <div className="mx-auto px-3 sm:px-6 lg:px-8 max-w-7xl">
+                <div className="flex items-center justify-between h-14 sm:h-16">
                     {/* Logo */}
                     <div className="flex-shrink-0">
-                        <Link to="/" className="text-2xl font-bold uppercase tracking-tight">Unboxing</Link>
+                        <Link to="/" className="text-xl sm:text-2xl font-bold uppercase tracking-tight">Unboxing</Link>
                     </div>
 
                     {/* Desktop Menu Items */}
@@ -57,51 +67,34 @@ const Navbar = () => {
                             />
                         </div>
 
-                        {/* Icons */}
-                        <div className="hidden sm:flex space-x-4 lg:space-x-6">
+                        {/* Icons - Visible on all screens */}
+                        <div className="flex items-center space-x-4 lg:space-x-6">
                             <Link to="/login" className="text-gray-700 hover:text-black transition-colors">
                                 <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
-                            </Link>
-                            <Link to="/wishlist" className="text-gray-700 hover:text-black transition-colors">
-                                <CiHeart className="w-6 h-6 cursor-pointer" />
                             </Link>
                             <Link to="/cart" className="text-gray-700 hover:text-black transition-colors">
                                 <HiShoppingBag className="w-6 h-6 cursor-pointer" />
                             </Link>
+                            {/* Mobile Menu Button */}
+                            <button
+                                className="sm:hidden text-gray-700 p-1 hover:bg-gray-100 rounded-md transition-colors"
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            >
+                                {isMenuOpen ? (
+                                    <RiCloseLine className="w-6 h-6" />
+                                ) : (
+                                    <RiMenuLine className="w-6 h-6" />
+                                )}
+                            </button>
                         </div>
-
-                        {/* Mobile Menu Button */}
-                        <button
-                            className="sm:hidden text-gray-700 p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        >
-                            {isMenuOpen ? (
-                                <RiCloseLine className="w-6 h-6" />
-                            ) : (
-                                <RiMenuLine className="w-6 h-6" />
-                            )}
-                        </button>
                     </div>
                 </div>
 
                 {/* Mobile Menu */}
                 {isMenuOpen && (
-                    <div className="sm:hidden fixed w-full bg-white left-0 top-[68px] px-4 pb-4 shadow-lg animate-slideDown">
-                        <ul className="space-y-2 py-4 border-t border-gray-200">
-                            {navItems.map((item) => (
-                                <li key={item.path}>
-                                    <Link
-                                        to={item.path}
-                                        className="block text-gray-700 hover:text-black py-3 px-4 rounded-md hover:bg-gray-50 transition-colors"
-                                        onClick={() => setIsMenuOpen(false)}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-
-                        <div className="pt-4 border-t border-gray-200">
+                    <div className="sm:hidden fixed w-full bg-white left-0 top-[60px] sm:top-[68px] px-4 pb-4 shadow-lg animate-slideDown overflow-y-auto max-h-[calc(100vh-60px)]">
+                        {/* Mobile Search */}
+                        <div className="pt-4">
                             <div className="flex items-center space-x-2 border border-black/20 rounded-full px-4 py-2">
                                 <CiSearch className="w-5 h-5 text-gray-500 flex-shrink-0" />
                                 <input
@@ -110,15 +103,37 @@ const Navbar = () => {
                                     className="bg-transparent w-full focus:outline-none placeholder:text-gray-500 text-sm"
                                 />
                             </div>
-                            <div className="flex space-x-6 mt-4 px-4">
-                                <Link to="/login" className="text-gray-700 hover:text-black transition-colors">
-                                    <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
+                        </div>
+
+                        {/* Mobile Navigation Links */}
+                        <ul className="space-y-1 py-4 border-t border-gray-200 mt-4">
+                            {navItems.map((item) => (
+                                <li key={item.path}>
+                                    <Link
+                                        to={item.path}
+                                        className="block text-gray-700 hover:text-black py-2.5 px-4 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        {item.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+
+                        {/* Mobile Icons */}
+                        <div className="pt-4 border-t border-gray-200">
+                            <div className="flex justify-around px-4">
+                                <Link to="/login" className="flex flex-col items-center text-gray-700 hover:text-black transition-colors">
+                                    <RiAccountCircleLine className="w-6 h-6" />
+                                    <span className="text-xs mt-1">Account</span>
                                 </Link>
-                                <Link to="/wishlist" className="text-gray-700 hover:text-black transition-colors">
-                                    <CiHeart className="w-6 h-6 cursor-pointer" />
+                                <Link to="/wishlist" className="flex flex-col items-center text-gray-700 hover:text-black transition-colors">
+                                    <CiHeart className="w-6 h-6" />
+                                    <span className="text-xs mt-1">Wishlist</span>
                                 </Link>
-                                <Link to="/cart" className="text-gray-700 hover:text-black transition-colors">
-                                    <HiShoppingBag className="w-6 h-6 cursor-pointer" />
+                                <Link to="/cart" className="flex flex-col items-center text-gray-700 hover:text-black transition-colors">
+                                    <HiShoppingBag className="w-6 h-6" />
+                                    <span className="text-xs mt-1">Cart</span>
                                 </Link>
                             </div>
                         </div>

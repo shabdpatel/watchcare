@@ -65,7 +65,7 @@ const InputForm = () => {
 
         // Bags
         bagType: '',
-        bagClosureType: '',
+        bagClosureType: '', // Add this line
         compartments: '',
         bagMaterial: '',
         dimensions: '',
@@ -822,6 +822,30 @@ const InputForm = () => {
                                         >
                                             <option value="">Select Type</option>
                                             {['Backpack', 'Handbag', 'Shoulder Bag', 'Tote', 'Clutch', 'Travel Bag'].map(option => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Closure Type</label>
+                                        <select
+                                            name="bagClosureType"
+                                            value={formData.bagClosureType}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        >
+                                            <option value="">Select Closure Type</option>
+                                            {[
+                                                'Zipper',
+                                                'Button',
+                                                'Magnetic Snap',
+                                                'Buckle',
+                                                'Drawstring',
+                                                'Flap',
+                                                'Toggle',
+                                                'Hook and Loop'
+                                            ].map(option => (
                                                 <option key={option} value={option}>{option}</option>
                                             ))}
                                         </select>

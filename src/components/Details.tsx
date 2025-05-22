@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../pages/firebase";
 import { useEffect, useState } from "react";
@@ -258,6 +258,12 @@ const Detail = () => {
         );
     };
 
+    // Add this helper function for truncating description
+    const truncateText = (text, maxLength) => {
+        if (!text) return '';
+        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+    };
+
     if (!watch) return (
         <div className="min-h-screen bg-white flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-600"></div>
@@ -265,188 +271,189 @@ const Detail = () => {
     );
 
     return (
-        <div className="min-h-screen bg-white text-black pt-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-16">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                    {/* Image Gallery */}
-                    <div className="space-y-4 lg:space-y-6">
-                        <div className="aspect-square overflow-hidden rounded-2xl border-2 border-gray-300">
-                            <img
-                                src={watch.images?.[currentImageIndex] || watch.Image}
-                                alt={watch.Company}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                            {watch.images?.map((img, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setCurrentImageIndex(index)}
-                                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 ${index === currentImageIndex
-                                        ? 'border-gray-400'
-                                        : 'border-gray-300'
-                                        }`}
-                                >
-                                    <img
-                                        src={img}
-                                        alt="Thumbnail"
-                                        className="w-full h-full object-cover rounded-md"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Product Details */}
-                    <div className="space-y-6 lg:space-y-8">
-                        <div className="space-y-4 border-b border-gray-300 pb-6">
-                            <h1 className="text-3xl font-bold text-gray-900">
-                                {watch.Company} {watch.Model}
-                            </h1>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-500">SKU:</span>
-                                <span className="font-medium">{watch.SKU}</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            {/* Price Section */}
-                            <div className="space-y-2">
-                                <p className="text-3xl font-bold text-rose-600">
-                                    Rs.{watch.Price}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    {watch.Description}
-                                </p>
-                                <button className="text-rose-600 underline text-sm">
-                                    CHECK HELIOS SELLING PRICE
-                                </button>
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
+                {/* Main Product Section */}
+                <div className="bg-white rounded-2xl shadow-sm p-4 md:p-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                        {/* Image Gallery Section */}
+                        <div className="space-y-4">
+                            <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 border hover:border-gray-400 transition-all">
+                                <img
+                                    src={watch?.images?.[currentImageIndex] || watch?.Image}
+                                    alt={watch?.Company}
+                                    className="w-full h-full object-contain"
+                                />
                             </div>
 
-                            {/* Wishlist & Genuine Badge */}
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => toggleWishlist(watch.id)}
-                                    className="flex items-center gap-1 text-rose-600"
-                                >
-                                    {wishlist.includes(watch.id) ? (
-                                        <HeartSolidIcon className="w-5 h-5" />
-                                    ) : (
-                                        <HeartIcon className="w-5 h-5" />
-                                    )}
-                                    <span className="underline">
-                                        {wishlist.includes(watch.id) ? 'REMOVE FROM WISHLIST' : 'ADD TO WISHLIST'}
-                                    </span>
-                                </button>
-                                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                                    1000 GENUINE PRODUCTS
-                                </span>
-                            </div>
-
-                            {/* Trust & Security */}
-                            <div className="space-y-4">
-                                <button className="w-full flex items-center justify-center gap-2 py-3 bg-blue-100 text-blue-800 rounded-lg font-medium">
-                                    <ShieldCheckIcon className="w-6 h-6" />
-                                    BUY WITH TITAN TRUST
-                                </button>
-
-                                <div className="bg-gray-100 p-4 rounded-lg">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <LockClosedIcon className="w-6 h-6 text-green-600" />
-                                        <span className="font-medium">SECURE PAYMENT</span>
-                                    </div>
-                                    <p className="text-sm text-gray-600">
-                                        Get Credit Card EMI on 19+ Banks
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                        Check Debit Card & Cardless EMI options
-                                    </p>
-                                    <button className="text-rose-600 text-sm mt-2">
-                                        VIEW PLANS &gt;
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Dynamic Specifications Section */}
-                            {renderSpecifications(watch, collectionName)}
-
-                            {/* Delivery Options */}
-                            <div className="bg-gray-50 p-6 rounded-xl space-y-4">
-                                <h3 className="text-xl font-semibold">DELIVERY OPTIONS</h3>
-                                <div className="space-y-2">
-                                    <p className="text-gray-600">Enter Pincode to unlock delivery options</p>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Enter Pincode"
-                                            className="px-4 py-2 border rounded-lg w-48"
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                {watch?.images?.map((img, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setCurrentImageIndex(index)}
+                                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-all
+                                            ${index === currentImageIndex
+                                                ? 'border-rose-500 shadow-md'
+                                                : 'border-gray-200 hover:border-gray-300'}`}
+                                    >
+                                        <img
+                                            src={img}
+                                            alt={`View ${index + 1}`}
+                                            className="w-full h-full object-cover"
                                         />
-                                        <button className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
-                                            CHECK
-                                        </button>
-                                    </div>
-                                    <p className="text-sm text-gray-500">
-                                        Standard Delivery available at 25000+ Pincodes
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Add to Cart */}
-                            <button
-                                onClick={() => addToCart(watch)}
-                                className="w-full py-4 bg-rose-600 text-white rounded-xl uppercase tracking-widest font-medium hover:bg-rose-700 transition-colors"
-                            >
-                                ADD TO CART
-                            </button>
-
-                            {/* Enhanced Offers Section */}
-                            <div className="bg-yellow-100 p-6 rounded-xl space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-xl font-semibold">OFFERS</h3>
-                                    <button className="text-rose-600 font-medium">
-                                        SHOW OFFERS
                                     </button>
-                                </div>
-                                <ul className="space-y-2">
-                                    <li className="flex items-center gap-2">
-                                        <span className="bg-rose-600 text-white px-2 py-1 rounded text-sm">40%</span>
-                                        <span className="text-gray-700">Security IPID</span>
-                                    </li>
-                                </ul>
+                                ))}
                             </div>
+                        </div>
+
+                        {/* Product Info Section */}
+                        <div className="space-y-6">
+                            <div className="space-y-4">
+                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+                                    {watch?.Company} {watch?.Model}
+                                </h1>
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <span className="text-3xl font-bold text-rose-600">
+                                        ₹{watch?.Price?.toLocaleString()}
+                                    </span>
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <span>SKU:</span>
+                                        <span className="font-medium">{watch?.SKU}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Actions Section */}
+                            <div className="flex flex-wrap gap-4">
+                                <button
+                                    onClick={() => addToCart(watch)}
+                                    className="flex-1 min-w-[200px] py-3 px-6 bg-rose-600 hover:bg-rose-700 
+                                        text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <ShoppingBagIcon className="w-5 h-5" />
+                                    Add to Cart
+                                </button>
+
+                                <button
+                                    onClick={() => toggleWishlist(watch?.id)}
+                                    className={`flex items-center gap-2 px-6 py-3 rounded-lg border transition-colors
+                                        ${wishlist.includes(watch?.id)
+                                            ? 'bg-rose-50 border-rose-200 text-rose-600'
+                                            : 'border-gray-300 hover:border-gray-400'}`}
+                                >
+                                    {wishlist.includes(watch?.id)
+                                        ? <HeartSolidIcon className="w-5 h-5 text-rose-600" />
+                                        : <HeartIcon className="w-5 h-5" />
+                                    }
+                                </button>
+                            </div>
+
+                            {/* Trust Badges */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-3">
+                                    <ShieldCheckIcon className="w-8 h-8 text-blue-600" />
+                                    <div>
+                                        <p className="font-medium text-blue-900">Genuine Product</p>
+                                        <p className="text-sm text-blue-700">100% Authenticity Guaranteed</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-green-50 p-4 rounded-lg flex items-center gap-3">
+                                    <LockClosedIcon className="w-8 h-8 text-green-600" />
+                                    <div>
+                                        <p className="font-medium text-green-900">Secure Payment</p>
+                                        <p className="text-sm text-green-700">Multiple Payment Options</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Add Description Section - after Trust Badges and before Specifications */}
+                            <div className="mt-8 space-y-6">
+                                <div className="prose max-w-none">
+                                    <h3 className="text-xl font-semibold mb-4">Product Description</h3>
+                                    <div className="text-gray-600 space-y-4">
+                                        <p>{watch?.Description}</p>
+                                        {watch?.Features && (
+                                            <div>
+                                                <h4 className="text-lg font-medium text-gray-900 mt-4 mb-2">Key Features:</h4>
+                                                <ul className="list-disc pl-5 space-y-1">
+                                                    {watch.Features.map((feature, index) => (
+                                                        <li key={index}>{feature}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Specifications Section with improved layout */}
+                            {renderSpecifications(watch, collectionName)}
                         </div>
                     </div>
                 </div>
-            </div>
-            {relatedWatches.length > 0 && (
-                <div className="bg-gray-50 py-12">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 className="text-2xl font-bold mb-8">MORE FROM {watch.Company}</h2>
+
+                {/* Enhanced Related Products Section */}
+                {relatedWatches.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-bold mb-6">More from {watch?.Company}</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {relatedWatches.map((relatedWatch) => (
-                                <div key={relatedWatch.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="p-4">
-                                        <img
-                                            src={relatedWatch.images?.[0] || relatedWatch.Image}
-                                            alt={relatedWatch.Company}
-                                            className="w-full h-48 object-contain mb-4"
-                                        />
-                                        <h3 className="font-semibold text-lg">{relatedWatch.Company}</h3>
-                                        <p className="text-gray-600 text-sm mb-2">{relatedWatch.Model}</p>
-                                        <p className="text-lg font-bold text-rose-600">Rs. {relatedWatch.Price}</p>
-                                        <div className="mt-4 space-y-2">
-                                            <button className="w-full border border-rose-600 text-rose-600 py-2 rounded-lg hover:bg-rose-50 transition-colors">
-                                                BUY ONLINE
-                                            </button>
+                                <div
+                                    key={relatedWatch.id}
+                                    className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4"
+                                >
+                                    <Link
+                                        to={`/${collectionName}/${relatedWatch.id}`}
+                                        className="block group"
+                                    >
+                                        <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-4">
+                                            <img
+                                                src={relatedWatch.Image || relatedWatch.images?.[0]}
+                                                alt={relatedWatch.Model}
+                                                className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                                            />
                                         </div>
+                                        <div className="space-y-2">
+                                            <h3 className="font-medium text-gray-900 group-hover:text-rose-600 transition-colors">
+                                                {relatedWatch.Company} {relatedWatch.Model}
+                                            </h3>
+                                            <p className="text-sm text-gray-500">
+                                                {truncateText(relatedWatch.Description, 100)}
+                                            </p>
+                                            <p className="text-lg font-bold text-rose-600">
+                                                ₹{relatedWatch.Price?.toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </Link>
+                                    <div className="mt-4 flex justify-between items-center">
+                                        <button
+                                            onClick={() => addToCart(relatedWatch)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 
+                                                text-white rounded-lg text-sm font-medium transition-colors"
+                                        >
+                                            <ShoppingBagIcon className="w-4 h-4" />
+                                            Add to Cart
+                                        </button>
+                                        <button
+                                            onClick={() => toggleWishlist(relatedWatch.id)}
+                                            className={`p-2 rounded-full transition-colors
+                                                ${wishlist.includes(relatedWatch.id)
+                                                    ? 'text-rose-600 bg-rose-50'
+                                                    : 'text-gray-400 hover:text-rose-600'}`}
+                                        >
+                                            {wishlist.includes(relatedWatch.id)
+                                                ? <HeartSolidIcon className="w-5 h-5" />
+                                                : <HeartIcon className="w-5 h-5" />
+                                            }
+                                        </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };
