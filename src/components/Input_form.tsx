@@ -84,7 +84,7 @@ const InputForm = () => {
         // Electronics
         electronicType: '',
         model: '',
-        specifications: '',
+        specifications: '', // Add this line
         color: '',
         includedAccessories: '',
         warrantyPeriod: '',
@@ -249,7 +249,8 @@ const InputForm = () => {
                     Object.assign(productData, {
                         Type: formData.electronicType,
                         Model: formData.model,
-                        Specifications: formData.specifications,
+                        Specifications: formData.specifications, // Add this line
+                        ManufacturedBy: formData.manufacturedBy, // Make sure this is included
                         Color: formData.color,
                         IncludedAccessories: formData.includedAccessories,
                         WarrantyPeriod: formData.warrantyPeriod,
@@ -1104,6 +1105,32 @@ const InputForm = () => {
                                             />
                                         </div>
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Fabric</label>
+                                        <select
+                                            name="fabric"
+                                            value={formData.fabric}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        >
+                                            <option value="">Select Fabric</option>
+                                            {[
+                                                'Cotton',
+                                                'Polyester',
+                                                'Wool',
+                                                'Linen',
+                                                'Silk',
+                                                'Denim',
+                                                'Rayon',
+                                                'Nylon',
+                                                'Spandex',
+                                                'Blend'
+                                            ].map(option => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1169,6 +1196,30 @@ const InputForm = () => {
                                             type="text"
                                             name="importedBy"
                                             value={formData.importedBy}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Specifications</label>
+                                        <textarea
+                                            name="specifications"
+                                            value={formData.specifications}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="Enter device specifications"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                        <input
+                                            type="text"
+                                            name="manufacturedBy"
+                                            value={formData.manufacturedBy}
                                             onChange={handleChange}
                                             className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             required

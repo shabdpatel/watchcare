@@ -65,7 +65,7 @@ export const filterOptions = {
     },
     electronics: {
         brands: ['Apple', 'Samsung', 'Sony', 'Bose', 'JBL'],
-        types: ['Headphones', 'Earbuds', 'Speakers', 'Chargers', 'Power Banks'],
+        types: ['Mobile', 'Headphones', 'Chargers', 'Accessories'],
         colors: ['Black', 'White', 'Grey', 'Blue', 'Rose Gold'],
         features: ['Wireless', 'Noise Cancelling', 'Water Resistant', 'Fast Charging'],
         warranty: ['6 Months', '1 Year', '2 Years', '3 Years']

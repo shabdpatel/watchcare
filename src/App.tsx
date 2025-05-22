@@ -8,9 +8,9 @@ import form from "./pages/form";
 import Detail from "./components/Details";
 import AllWatches from "./pages/All_wathces";
 import Shoes from "./pages/Shoes";
-import Women from "./pages/Women";
-import Smart from "./pages/Smart";
-import Brand from "./pages/Brand";
+import Fashion from "./pages/Fashion";
+import Smart from "./pages/Bag";
+import Electronics from "./pages/Electronics";
 import Login from "./components/Login";
 import Profile from "./components/Profile";
 import Register from "./components/Register";
@@ -38,9 +38,9 @@ function AppContent() {
             <Route path="/form" element={<form />} />
             <Route path="/details/:collectionName/:id" element={<Detail />} />
             <Route path="/shoes" element={<Shoes />} />
-            <Route path="/women" element={<Women />} />
+            <Route path="/fashion" element={<Fashion />} />
             <Route path="/smart" element={<Smart />} />
-            <Route path="/brand" element={<Brand />} />
+            <Route path="/electronics" element={<Electronics />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={
               currentUser ? (
