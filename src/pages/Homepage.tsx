@@ -33,17 +33,20 @@ const Homepage = () => {
         {
             name: 'Watches',
             image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e',
-            description: 'Luxury timepieces from leading brands'
+            description: 'Luxury timepieces from leading brands',
+            route: '/all_watches'
         },
         {
             name: 'Fashion',
             image: 'https://images.unsplash.com/photo-1445205170230-053b83016050',
-            description: 'Premium apparel collection'
+            description: 'Premium apparel collection',
+            route: '/fashion'
         },
         {
             name: 'Electronics',
             image: 'https://images.unsplash.com/photo-1468495244123-6c6c332eeece',
-            description: 'High-end tech accessories'
+            description: 'High-end tech accessories',
+            route: '/electronics'
         }
     ];
 
@@ -139,16 +142,19 @@ const Homepage = () => {
         }
     ];
 
+    // Update collections with routes
     const collections = [
         {
             name: 'Summer Collection',
             description: 'Light and stylish pieces for the season',
-            image: 'https://images.unsplash.com/photo-1549972574-8e3e1ed6a347'
+            image: 'https://images.unsplash.com/photo-1549972574-8e3e1ed6a347',
+            route: '/fashion'
         },
         {
             name: 'Luxury Edition',
             description: 'Premium timepieces for connoisseurs',
-            image: 'https://images.unsplash.com/photo-1606604830262-2e0732b12acc'
+            image: 'https://images.unsplash.com/photo-1606604830262-2e0732b12acc',
+            route: '/all_watches'
         }
     ];
 
@@ -171,9 +177,12 @@ const Homepage = () => {
                         <p className="text-xl text-gray-300 max-w-2xl tracking-wide">
                             Discover our curated collection of premium watches and lifestyle accessories
                         </p>
-                        <button className="bg-white text-gray-900 px-8 py-4 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors">
+                        <Link
+                            to="/all_watches"
+                            className="bg-white text-gray-900 px-8 py-4 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors inline-block"
+                        >
                             Explore Collection
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -184,7 +193,12 @@ const Homepage = () => {
                     <div className="flex items-center justify-center gap-4">
                         <span className="text-lg font-semibold">Flash Sale - Up to 50% Off!</span>
                         <span className="bg-white text-red-600 px-3 py-1 rounded-full text-sm font-bold">24:00:00</span>
-                        <button className="text-sm underline">Shop Now</button>
+                        <Link
+                            to="/all_watches"
+                            className="text-sm underline hover:text-gray-200 transition-colors"
+                        >
+                            Shop Now
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -220,12 +234,13 @@ const Homepage = () => {
                         {categories.map((category) => (
                             <Link
                                 key={category.name}
-                                to={`/category/${category.name.toLowerCase()}`}
+                                to={category.route}
                                 className="group relative aspect-[4/5] overflow-hidden rounded-lg"
                             >
                                 <img
                                     src={category.image}
                                     alt={category.name}
+                                    loading="lazy"
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-4">
@@ -455,9 +470,12 @@ const Homepage = () => {
                                             {collection.name}
                                         </h3>
                                         <p className="text-gray-200 mb-4">{collection.description}</p>
-                                        <button className="bg-white text-gray-900 px-6 py-2 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors">
+                                        <Link
+                                            to={collection.route}
+                                            className="bg-white text-gray-900 px-6 py-2 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors"
+                                        >
                                             Explore
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

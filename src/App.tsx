@@ -21,6 +21,7 @@ import Favicon from './components/Favicon';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InstallPrompt from './components/InstallPrompt';
+import ScrollToTop from './components/ScrollToTop';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -30,6 +31,7 @@ function AppContent() {
   return (
     <div className="flex flex-col min-h-screen">
       <BrowserRouter>
+        <ScrollToTop />
         <Navbar />
         <div className="flex-1 pt-20">
           <Routes>
