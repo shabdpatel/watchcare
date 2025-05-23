@@ -11,6 +11,7 @@ import {
     ArrowsUpDownIcon
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
+import { useCart } from '../context/CartContext';
 
 export const accessoriesFilters = {
     types: ['Sunglasses', 'Belt', 'Purse', 'Clutch'],
@@ -26,6 +27,7 @@ export const accessoriesFilters = {
 };
 
 const Accessories = () => {
+    const { addToCart } = useCart();
     const [sortOption, setSortOption] = useState('bestsellers');
     const [filters, setFilters] = useState({
         types: [],
@@ -82,8 +84,19 @@ const Accessories = () => {
         );
     };
 
-    const addToCart = (fashion) => {
-        setCart(prev => [...prev, { ...fashion, quantity: 1 }]);
+    const handleAddToCart = (e, item) => {
+        if (e) e.preventDefault();
+        addToCart({
+            id: item.id,
+            name: item.Brand || item.Name,
+            price: parseFloat(item.Price),
+            image: item.Image || item.images?.[0],
+            quantity: 1,
+            category: 'Accessories',
+            type: item.AccessoryType,
+            material: item.Material,
+            color: item.Color
+        });
     };
 
     const renderRating = (rating) => {
@@ -294,7 +307,7 @@ const Accessories = () => {
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    addToCart(item);
+                                                    handleAddToCart(e, item);
                                                 }}
                                                 className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
                                             >
@@ -325,7 +338,7 @@ const Accessories = () => {
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
-                                                        addToCart(item);
+                                                        handleAddToCart(e, item);
                                                     }}
                                                     className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
                                                 >

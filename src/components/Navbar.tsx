@@ -6,12 +6,14 @@ import { HiShoppingBag } from "react-icons/hi2";
 import { useSearch } from '../context/SearchContext';
 import SearchResults from './SearchResults';
 import { useAuth } from './AuthContext';  // Add this import
+import { useCart } from '../context/CartContext';  // Add this import
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const { searchQuery, setSearchQuery, isSearching, setIsSearching } = useSearch();
     const { currentUser } = useAuth(); // Add auth context
+    const { cartCount } = useCart();  // Add this
 
     React.useEffect(() => {
         const handleScroll = () => {
@@ -92,8 +94,13 @@ const Navbar = () => {
 
                         <div className="flex items-center space-x-4 lg:space-x-6">
                             {renderAccountLink()}
-                            <Link to="/cart" className="text-gray-700 hover:text-black transition-colors">
-                                <HiShoppingBag className="w-6 h-6 cursor-pointer" />
+                            <Link to="/cart" className="relative">
+                                <HiShoppingBag className="w-6 h-6 text-gray-700 hover:text-black transition-colors" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                        {cartCount}
+                                    </span>
+                                )}
                             </Link>
                             <button
                                 className="sm:hidden text-gray-700 p-1 hover:bg-gray-100 rounded-md transition-colors"
@@ -147,9 +154,19 @@ const Navbar = () => {
                                     <CiHeart className="w-6 h-6" />
                                     <span className="text-xs mt-1">Wishlist</span>
                                 </Link>
-                                <Link to="/cart" className="flex flex-col items-center text-gray-700 hover:text-black transition-colors">
-                                    <HiShoppingBag className="w-6 h-6" />
-                                    <span className="text-xs mt-1">Cart</span>
+                                <Link
+                                    to="/cart"
+                                    className="flex flex-col items-center text-gray-700 hover:text-black transition-colors relative"
+                                >
+                                    <div className="relative">
+                                        <HiShoppingBag className="w-6 h-6" />
+                                        {cartCount > 0 && (
+                                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                                {cartCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-xs mt-1">Cart ({cartCount})</span>
                                 </Link>
                             </div>
                         </div>

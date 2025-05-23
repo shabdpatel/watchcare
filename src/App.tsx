@@ -23,6 +23,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import InstallPrompt from './components/InstallPrompt';
 import ScrollToTop from './components/ScrollToTop';
 import { SearchProvider } from './context/SearchContext';
+import { CartProvider } from './context/CartContext';
+import Cart from './components/Cart';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -46,6 +48,7 @@ function AppContent() {
             <Route path="/bags" element={<Bags />} />
             <Route path="/accessories" element={<Accessories />} />
             <Route path="/electronics" element={<Electronics />} />
+            <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={
               currentUser ? (
@@ -84,12 +87,24 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <SearchProvider>
-        <Favicon />
-        <InstallPrompt />
-        <ToastContainer />
-        <AppContent />
-      </SearchProvider>
+      <CartProvider>
+        <SearchProvider>
+          <Favicon />
+          <InstallPrompt />
+          <ToastContainer
+            position="top-right"
+            autoClose={2000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+          <AppContent />
+        </SearchProvider>
+      </CartProvider>
     </AuthProvider>
   );
 }

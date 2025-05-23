@@ -12,6 +12,8 @@ import {
     ArrowsUpDownIcon
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
+import { useCart } from '../context/CartContext';
+import { toast } from 'react-toastify';
 
 // First, update the watch-specific filters at the top of the file
 const watchFilters = {
@@ -50,6 +52,7 @@ const AllWatches = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [allWatches, setAllWatches] = useState([]);
     const [priceRange, setPriceRange] = useState([0, 1000000]);
+    const { addToCart } = useCart();
 
     useEffect(() => {
         const fetchWatches = async () => {
@@ -91,8 +94,18 @@ const AllWatches = () => {
         );
     };
 
-    const addToCart = (watch) => {
-        setCart(prev => [...prev, { ...watch, quantity: 1 }]);
+    const handleAddToCart = (e, item) => {
+        if (e) e.preventDefault();
+        addToCart({
+            id: item.id,
+            name: item.Brand || item.Name,
+            price: parseFloat(item.Price),
+            image: item.Image || item.images?.[0],
+            quantity: 1,
+            category: 'Watches',  // Explicitly set category
+            size: item.Size,
+            color: item.Color
+        });
     };
 
     const renderRating = (rating) => {
@@ -462,7 +475,7 @@ const AllWatches = () => {
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    addToCart(watch);
+                                                    handleAddToCart(e, watch);
                                                 }}
                                                 className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
                                             >
@@ -493,7 +506,7 @@ const AllWatches = () => {
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
-                                                        addToCart(watch);
+                                                        handleAddToCart(e, watch);
                                                     }}
                                                     className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
                                                 >
@@ -571,7 +584,7 @@ const AllWatches = () => {
                             </div>
                             <p className="text-gray-700">{selectedWatch.Description}</p>
                             <button
-                                onClick={() => addToCart(selectedWatch)}
+                                onClick={() => handleAddToCart(null, selectedWatch)}
                                 className="w-full py-3 bg-gray-400 hover:bg-gray-300 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
                             >
                                 <ShoppingBagIcon className="w-5 h-5" />

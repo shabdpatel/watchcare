@@ -4,6 +4,7 @@ import { db } from "../pages/firebase";
 import { useEffect, useState } from "react";
 import { HeartIcon, ShoppingBagIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
+import { useCart } from '../context/CartContext'; // Add this import
 
 // Define specifications for each product type
 const productSpecs = {
@@ -171,8 +172,8 @@ const Detail = () => {
     const [watch, setWatch] = useState(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [wishlist, setWishlist] = useState([]);
-    const [cart, setCart] = useState([]);
     const [relatedWatches, setRelatedWatches] = useState([]);
+    const { addToCart } = useCart(); // Add this hook
 
     useEffect(() => {
         const fetchWatch = async () => {
@@ -221,8 +222,14 @@ const Detail = () => {
         );
     };
 
-    const addToCart = (watch) => {
-        setCart(prev => [...prev, { ...watch, quantity: 1 }]);
+    const handleAddToCart = (item) => {
+        addToCart({
+            id: item.id,
+            name: item.Company,
+            price: parseFloat(item.Price),
+            image: item.Image || item.images?.[0],
+            quantity: 1
+        });
     };
 
     const renderRating = (rating) => {
@@ -326,7 +333,7 @@ const Detail = () => {
                             {/* Actions Section */}
                             <div className="flex flex-wrap gap-4">
                                 <button
-                                    onClick={() => addToCart(watch)}
+                                    onClick={() => handleAddToCart(watch)}
                                     className="flex-1 min-w-[200px] py-3 px-6 bg-rose-600 hover:bg-rose-700 
                                         text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                 >
@@ -428,7 +435,10 @@ const Detail = () => {
                                     </Link>
                                     <div className="mt-4 flex justify-between items-center">
                                         <button
-                                            onClick={() => addToCart(relatedWatch)}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleAddToCart(relatedWatch);
+                                            }}
                                             className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 
                                                 text-white rounded-lg text-sm font-medium transition-colors"
                                         >
