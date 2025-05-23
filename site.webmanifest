@@ -1,7 +1,11 @@
 {
     "name": "Unboxing Store",
     "short_name": "Unboxing",
-    "description": "Premium lifestyle store for luxury watches, fashion & accessories",
+    "description": "Premium Lifestyle Store - Luxury Watches, Fashion & Accessories",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
     "icons": [
         {
             "src": "/assets/android-chrome-192x192.png",
@@ -15,11 +19,5 @@
             "type": "image/png",
             "purpose": "any maskable"
         }
-    ],
-    "start_url": "/",
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
-    "display": "standalone",
-    "orientation": "portrait-primary",
-    "prefer_related_applications": false
+    ]
 }
