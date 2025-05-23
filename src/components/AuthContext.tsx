@@ -119,13 +119,18 @@ export function AuthProvider({ children }) {
 
     const logout = () => signOut(auth);
 
+    // Update the useEffect hook that checks auth state
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
             if (user) {
-                // Changed to use email as document ID
-                const userDoc = await getDoc(doc(db, 'users', user.email));
-                setOnboardingCompleted(userDoc.data()?.onboardingCompleted || false);
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.email));
+                    const userData = userDoc.data();
+                    setOnboardingCompleted(userData?.onboardingCompleted || false);
+                } catch (error) {
+                    console.error('Error checking onboarding status:', error);
+                }
             }
             setLoading(false);
         });

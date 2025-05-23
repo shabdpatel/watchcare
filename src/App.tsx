@@ -22,6 +22,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InstallPrompt from './components/InstallPrompt';
 import ScrollToTop from './components/ScrollToTop';
+import { SearchProvider } from './context/SearchContext';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -51,12 +52,26 @@ function AppContent() {
                 onboardingCompleted ? (
                   <Profile />
                 ) : (
-                  <UserOnboarding />
+                  <Navigate to="/onboarding" replace />
                 )
               ) : (
-                <Navigate to="/login" />
+                <Navigate to="/login" replace />
               )
             } />
+            <Route
+              path="/onboarding"
+              element={
+                currentUser ? (
+                  onboardingCompleted ? (
+                    <Navigate to="/profile" replace />
+                  ) : (
+                    <UserOnboarding />
+                  )
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
             <Route path="/register" element={<Register />} />
           </Routes>
         </div>
@@ -69,10 +84,12 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Favicon />
-      <InstallPrompt />
-      <ToastContainer />
-      <AppContent />
+      <SearchProvider>
+        <Favicon />
+        <InstallPrompt />
+        <ToastContainer />
+        <AppContent />
+      </SearchProvider>
     </AuthProvider>
   );
 }

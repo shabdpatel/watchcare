@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowPathIcon, EnvelopeIcon, LockClosedIcon, PhotoIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../pages/firebase';
+import { toast } from 'react-toastify';
 
 const Profile = () => {
     const { currentUser, logout } = useAuth();
@@ -14,16 +15,22 @@ const Profile = () => {
 
     useEffect(() => {
         async function fetchUserData() {
-            if (!currentUser) return;
+            if (!currentUser?.email) return;
 
             try {
+                setLoading(true);
                 const userDoc = await getDoc(doc(db, 'users', currentUser.email));
+
                 if (userDoc.exists()) {
                     setUserData(userDoc.data());
+                } else {
+                    setError('User profile not found');
+                    toast.error('User profile not found');
                 }
             } catch (err) {
+                console.error('Error fetching user data:', err);
                 setError('Failed to fetch user data');
-                console.error(err);
+                toast.error('Failed to fetch user data');
             } finally {
                 setLoading(false);
             }
@@ -31,6 +38,16 @@ const Profile = () => {
 
         fetchUserData();
     }, [currentUser]);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (err) {
+            console.error('Error logging out:', err);
+            toast.error('Failed to log out');
+        }
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">

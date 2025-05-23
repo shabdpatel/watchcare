@@ -88,6 +88,7 @@ const UserOnboarding = () => {
         setError('');
 
         try {
+            // Create user data object with all form data
             const userData = {
                 ...formData,
                 userId: currentUser.uid,
@@ -98,13 +99,17 @@ const UserOnboarding = () => {
             };
 
             // Save to Firestore using email as document ID
-            await setDoc(doc(db, 'users', currentUser.email), userData, { merge: true });
+            await setDoc(doc(db, 'users', currentUser.email), userData);
+
+            // Show success message using toast
+            toast.success('Profile completed successfully!');
 
             // Navigate to profile page
             navigate('/profile', { replace: true });
         } catch (err) {
-            setError('Failed to save user information. Please try again.');
-            console.error(err);
+            console.error('Error saving profile:', err);
+            setError('Failed to save profile information. Please try again.');
+            toast.error('Failed to save profile information');
         } finally {
             setLoading(false);
         }
