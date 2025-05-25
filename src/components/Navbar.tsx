@@ -63,7 +63,7 @@ const Navbar = () => {
             <div className="mx-auto px-3 sm:px-6 lg:px-8 max-w-7xl">
                 <div className="flex items-center justify-between h-14 sm:h-16">
                     <div className="flex-shrink-0">
-                        <Link to="/" className="text-xl sm:text-2xl font-bold uppercase tracking-tight">Unboxing</Link>
+                        <Link to="/" className="text-xl sm:text-2xl font-bold uppercase tracking-tight">Unbox</Link>
                     </div>
 
                     <div className="hidden sm:flex sm:items-center sm:space-x-4 lg:space-x-8">

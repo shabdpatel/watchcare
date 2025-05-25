@@ -81,7 +81,7 @@ const Footer = () => {
                     {/* Company Information Section */}
                     <div>
                         <h3 className="text-gray-900 uppercase font-semibold mb-3">
-                            Know Unboxing
+                            Know Unbox
                         </h3>
                         <ul className="space-y-2">
                             <li><Link to="/" className="hover:text-gray-900 transition">About Us</Link></li>
@@ -111,7 +111,7 @@ const Footer = () => {
                             Contact Us
                         </h3>
                         <ul className="space-y-2">
-                            <li className="text-gray-800">Unboxing Customer Care</li>
+                            <li className="text-gray-800">Unbox Customer Care</li>
                             <li>
                                 <a href="tel:+919049408898" className="text-blue-600 hover:underline">
                                     +91-9049408898
@@ -124,7 +124,7 @@ const Footer = () => {
                             </li>
                             <li className="mt-4">
                                 <p className="text-gray-600">Registered Office:</p>
-                                <p className="text-gray-800">123 Unboxing Plaza, Mumbai, India 400001</p>
+                                <p className="text-gray-800">123 Unbox Plaza, Mumbai, India 400001</p>
                             </li>
                         </ul>
                     </div>
@@ -171,7 +171,7 @@ const Footer = () => {
                             <img src="/amex.svg" alt="American Express" className="h-8" />
                         </div>
                         <div className="text-gray-600 text-sm text-center md:text-right">
-                            <p>&copy; {new Date().getFullYear()} Unboxing. All rights reserved.</p>
+                            <p>&copy; {new Date().getFullYear()} Unbox. All rights reserved.</p>
                             <p className="mt-1">Premium Watch Retailer</p>
                         </div>
                     </div>

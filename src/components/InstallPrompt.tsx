@@ -17,7 +17,7 @@ const InstallPrompt: React.FC = () => {
             if (!window.matchMedia('(display-mode: standalone)').matches) {
                 toast.info(
                     <div className="install-prompt">
-                        <p>Install Unboxing Store App for a better experience!</p>
+                        <p>Install Unbox Store App for a better experience!</p>
                         <button
                             onClick={() => handleInstallClick()}
                             className="bg-black text-white px-4 py-2 rounded"
@@ -50,7 +50,7 @@ const InstallPrompt: React.FC = () => {
                 await (deferredPrompt as any).prompt();
                 const { outcome } = await (deferredPrompt as any).userChoice;
                 if (outcome === 'accepted') {
-                    toast.success('Thank you for installing Unboxing Store!');
+                    toast.success('Thank you for installing Unbox Store!');
                     setIsInstallable(false);
                 }
                 setDeferredPrompt(null);

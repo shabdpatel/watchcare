@@ -25,6 +25,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { SearchProvider } from './context/SearchContext';
 import { CartProvider } from './context/CartContext';
 import Cart from './components/Cart';
+import ChatBot from './components/ChatBot';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -79,6 +80,7 @@ function AppContent() {
           </Routes>
         </div>
         <Footer />
+        <ChatBot />
       </BrowserRouter>
     </div>
   );

@@ -1,5 +1,5 @@
 /shabd/Desktop / Webdev / Projects / watch_store / public / service - worker.js
-const CACHE_NAME = 'unboxing-store-v1';
+const CACHE_NAME = 'Unbox-store-v1';
 const urlsToCache = [
     '/',
     '/index.html',

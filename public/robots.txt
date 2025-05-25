@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /private/
 Disallow: /checkout/
-Sitemap: https://unboxing-store.com/sitemap.xml
+Sitemap: https://Unbox-store.com/sitemap.xml
