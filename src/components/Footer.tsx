@@ -1,6 +1,7 @@
 // Import required React and icon components
 import { useState } from 'react';
 import { FaInstagram, FaTwitter, FaFacebookF } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     // State management for email input and subscription status
@@ -69,25 +70,25 @@ const Footer = () => {
                             Customer Service
                         </h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="hover:text-gray-900 transition">Order Tracking</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">FAQs</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Returns & Exchanges</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Shipping Information</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Contact Support</a></li>
+                            <li><Link to="/profile" className="hover:text-gray-900 transition">Order Tracking</Link></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">FAQs</Link></li>
+                            <li><Link to="/all_watches" className="hover:text-gray-900 transition">Returns & Exchanges</Link></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Shipping Information</Link></li>
+                            <li><Link to="/profile" className="hover:text-gray-900 transition">Contact Support</Link></li>
                         </ul>
                     </div>
 
                     {/* Company Information Section */}
                     <div>
                         <h3 className="text-gray-900 uppercase font-semibold mb-3">
-                            Know Helios
+                            Know Unboxing
                         </h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="hover:text-gray-900 transition">About Us</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Corporate Information</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Bulk Orders</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Store Locator</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Careers</a></li>
+                            <li><Link to="/" className="hover:text-gray-900 transition">About Us</Link></li>
+                            <li><Link to="/all_watches" className="hover:text-gray-900 transition">Corporate Information</Link></li>
+                            <li><Link to="/cart" className="hover:text-gray-900 transition">Bulk Orders</Link></li>
+                            <li><Link to="/profile" className="hover:text-gray-900 transition">Store Locator</Link></li>
+                            <li><Link to="/register" className="hover:text-gray-900 transition">Careers</Link></li>
                         </ul>
                     </div>
 
@@ -97,10 +98,10 @@ const Footer = () => {
                             Legal
                         </h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="hover:text-gray-900 transition">Privacy Policy</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Terms of Service</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Cookie Policy</a></li>
-                            <li><a href="#" className="hover:text-gray-900 transition">Accessibility</a></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Privacy Policy</Link></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Terms of Service</Link></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Cookie Policy</Link></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Accessibility</Link></li>
                         </ul>
                     </div>
 
@@ -110,20 +111,20 @@ const Footer = () => {
                             Contact Us
                         </h3>
                         <ul className="space-y-2">
-                            <li className="text-gray-800">Helios Customer Care</li>
+                            <li className="text-gray-800">Unboxing Customer Care</li>
                             <li>
-                                <a href="tel:+919355401889" className="text-blue-600 hover:underline">
-                                    +91-9355401889
+                                <a href="tel:+919049408898" className="text-blue-600 hover:underline">
+                                    +91-9049408898
                                 </a>
                             </li>
                             <li>
-                                <a href="mailto:support@helios.com" className="text-blue-600 hover:underline">
-                                    support@helios.com
+                                <a href="mailto:prameetsw@gmail.com" className="text-blue-600 hover:underline">
+                                    prameetsw@gmail.com
                                 </a>
                             </li>
                             <li className="mt-4">
                                 <p className="text-gray-600">Registered Office:</p>
-                                <p className="text-gray-800">123 Helios Plaza, Bangalore, India 560001</p>
+                                <p className="text-gray-800">123 Unboxing Plaza, Mumbai, India 400001</p>
                             </li>
                         </ul>
                     </div>
@@ -134,27 +135,27 @@ const Footer = () => {
                             Connect With Us
                         </h3>
                         <div className="flex space-x-4 mb-4">
-                            <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-lg">
                                 <FaTwitter />
-                            </a>
-                            <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                            </Link>
+                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-lg">
                                 <FaFacebookF />
-                            </a>
-                            <a href="#" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                            </Link>
+                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-lg">
                                 <FaInstagram />
-                            </a>
+                            </Link>
                         </div>
                         <div className="mt-4">
                             <h4 className="text-sm font-semibold text-gray-900 mb-2">
                                 Download Our App
                             </h4>
                             <div className="flex gap-2">
-                                <a href="#">
+                                <Link to="/">
                                     <img src="/app-store.svg" alt="App Store" className="h-10" />
-                                </a>
-                                <a href="#">
+                                </Link>
+                                <Link to="/">
                                     <img src="/google-play.svg" alt="Google Play" className="h-10" />
-                                </a>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -170,8 +171,8 @@ const Footer = () => {
                             <img src="/amex.svg" alt="American Express" className="h-8" />
                         </div>
                         <div className="text-gray-600 text-sm text-center md:text-right">
-                            <p>&copy; {new Date().getFullYear()} Helios. All rights reserved.</p>
-                            <p className="mt-1">Part of Titan Company Limited</p>
+                            <p>&copy; {new Date().getFullYear()} Unboxing. All rights reserved.</p>
+                            <p className="mt-1">Premium Watch Retailer</p>
                         </div>
                     </div>
                 </div>
