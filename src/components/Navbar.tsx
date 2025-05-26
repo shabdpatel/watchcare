@@ -1,19 +1,27 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CiHeart, CiSearch } from "react-icons/ci";
 import { RiAccountCircleLine, RiMenuLine, RiCloseLine } from "react-icons/ri";
 import { HiShoppingBag } from "react-icons/hi2";
 import { useSearch } from '../context/SearchContext';
 import SearchResults from './SearchResults';
-import { useAuth } from './AuthContext';  // Add this import
-import { useCart } from '../context/CartContext';  // Add this import
+import { useAuth } from './AuthContext';
+import { useCart } from '../context/CartContext';
+import {
+    UserIcon,
+    ShoppingBagIcon,
+    BuildingStorefrontIcon,
+    ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const { searchQuery, setSearchQuery, isSearching, setIsSearching } = useSearch();
-    const { currentUser } = useAuth(); // Add auth context
+    const { currentUser, logout } = useAuth(); // Add auth context
     const { cartCount } = useCart();  // Add this
+    const navigate = useNavigate();
 
     React.useEffect(() => {
         const handleScroll = () => {
@@ -22,6 +30,18 @@ const Navbar = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Add this after your other useEffect
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isProfileDropdownOpen && !event.target.closest('.profile-dropdown')) {
+                setIsProfileDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProfileDropdownOpen]);
 
     const navItems = [
         { name: 'WATCHES', path: '/all_watches' },
@@ -33,14 +53,83 @@ const Navbar = () => {
         { name: 'BECOME SELLER', path: '/input' }
     ];
 
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    };
+
     const renderAccountLink = () => (
-        <Link
-            to={currentUser ? "/profile" : "/login"}
-            className="text-gray-700 hover:text-black transition-colors"
-            title={currentUser ? "View Profile" : "Login"}
-        >
-            <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
-        </Link>
+        <div className="relative">
+            <button
+                onClick={() => currentUser && setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="text-gray-700 hover:text-black transition-colors focus:outline-none"
+                title={currentUser ? "Account Menu" : "Login"}
+            >
+                <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
+            </button>
+
+            {/* Dropdown Menu for logged-in users */}
+            {currentUser && isProfileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-100 animate-fadeIn profile-dropdown">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                            {currentUser.email}
+                        </p>
+                    </div>
+
+                    <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                        <UserIcon className="w-5 h-5 mr-2" />
+                        Profile
+                    </Link>
+
+                    <Link
+                        to="/orders"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                        <ShoppingBagIcon className="w-5 h-5 mr-2" />
+                        Our Orders
+                    </Link>
+
+                    <Link
+                        to="/sells"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                        <BuildingStorefrontIcon className="w-5 h-5 mr-2" />
+                        Our Sells
+                    </Link>
+
+                    <Link
+                        to="/input"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                        <BuildingStorefrontIcon className="w-5 h-5 mr-2" />
+                        Become a Seller
+                    </Link>
+
+                    <button
+                        onClick={() => {
+                            setIsProfileDropdownOpen(false);
+                            handleLogout();
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                        <ArrowRightOnRectangleIcon className="w-5 h-5 mr-2" />
+                        Logout
+                    </button>
+                </div>
+            )}
+        </div>
     );
 
     const renderMobileAccountLink = () => (

@@ -26,7 +26,7 @@ import { SearchProvider } from './context/SearchContext';
 import { CartProvider } from './context/CartContext';
 import Cart from './components/Cart';
 import ChatBot from './components/ChatBot';
-
+import Sells from "./components/Sells";
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
 
@@ -50,7 +50,9 @@ function AppContent() {
             <Route path="/accessories" element={<Accessories />} />
             <Route path="/electronics" element={<Electronics />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/sells" element={<Sells />} />
             <Route path="/login" element={<Login />} />
+
             <Route path="/profile" element={
               currentUser ? (
                 onboardingCompleted ? (

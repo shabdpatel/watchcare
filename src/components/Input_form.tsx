@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../pages/firebase';
+import { useAuth } from './AuthContext'; // Add this import at the top
 
 const InputForm = () => {
+    const { currentUser } = useAuth(); // Add this line
     const [formData, setFormData] = useState({
         productCategory: 'Watches',
         collectionType: 'Trending',
@@ -95,7 +97,18 @@ const InputForm = () => {
         accessoryDimensions: '',
         accessoryClosureType: '',
         lensType: '',
-        UVProtection: ''
+        UVProtection: '',
+
+        // Seller Information (New Fields)
+        sellerName: '',
+        sellerPhone: '',
+        sellerEmail: '',
+        sellerAddress: '',
+        sellerCity: '',
+        sellerState: '',
+        sellerPincode: '',
+        sellerGSTIN: '',
+        sellerPAN: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -125,14 +138,13 @@ const InputForm = () => {
         setLoading(true);
         setError('');
 
+        if (!currentUser) {
+            setError('You must be logged in to add products');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const missingCommon = requiredFields.common.filter(field => !formData[field]);
-            const missingCategory = requiredFields[formData.productCategory].filter(field => !formData[field]);
-
-            if (missingCommon.length > 0 || missingCategory.length > 0) {
-                throw new Error(`Missing required fields: ${[...missingCommon, ...missingCategory].join(', ')}`);
-            }
-
             const productData = {
                 Company: formData.company,
                 Description: formData.description,
@@ -147,7 +159,20 @@ const InputForm = () => {
                 ManufacturedBy: formData.manufacturedBy,
                 ImportedBy: formData.importedBy,
                 GlobalIdentifierValue: formData.globalIdentifierValue,
-                createdAt: new Date()
+                createdAt: new Date(),
+
+                // Add seller information
+                Seller: {
+                    Name: formData.sellerName,
+                    Phone: formData.sellerPhone,
+                    Email: currentUser.email, // Use the logged-in user's email
+                    Address: formData.sellerAddress,
+                    City: formData.sellerCity,
+                    State: formData.sellerState,
+                    Pincode: formData.sellerPincode,
+                    GSTIN: formData.sellerGSTIN,
+                    PAN: formData.sellerPAN
+                }
             };
 
             switch (formData.productCategory) {
@@ -324,6 +349,7 @@ const InputForm = () => {
 
     return (
         <div className="min-h-screen bg-gray-200 text-gray-900">
+            {/* Header section */}
             <div className="h-64 overflow-hidden relative bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center space-y-4">
@@ -333,6 +359,7 @@ const InputForm = () => {
                 </div>
             </div>
 
+            {/* Main form container */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
                     <div className="mb-10 text-center">
@@ -347,1108 +374,1234 @@ const InputForm = () => {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Product Category</label>
-                                <select
-                                    name="productCategory"
-                                    value={formData.productCategory}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
-                                >
-                                    {['Watches', 'Shoes', 'Bags', 'Fashion', 'Electronics', 'Accessories'].map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
+                        {/* Section 1: Product Information */}
+                        <div className="space-y-6">
+                            <h3 className="text-xl font-semibold text-gray-900 border-b pb-2">Product Information</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Existing product category and collection type fields */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Product Category</label>
+                                    <select
+                                        name="productCategory"
+                                        value={formData.productCategory}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                                    >
+                                        {['Watches', 'Shoes', 'Bags', 'Fashion', 'Electronics', 'Accessories'].map(option => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Collection Type</label>
-                                <select
-                                    name="collectionType"
-                                    value={formData.collectionType}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
-                                >
-                                    {collectionTypeOptions[formData.productCategory].map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Collection Type</label>
+                                    <select
+                                        name="collectionType"
+                                        value={formData.collectionType}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                                    >
+                                        {collectionTypeOptions[formData.productCategory].map(option => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        {/* Common Fields */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Brand</label>
-                                <input
-                                    type="text"
-                                    name="company"
-                                    value={formData.company}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
-                                <input
-                                    type="number"
-                                    name="price"
-                                    value={formData.price}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Gender/Sex</label>
-                                <select
-                                    name="gender"
-                                    value={formData.gender}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
-                                    required
-                                >
-                                    <option value="Unisex">Unisex</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold">Product Images (4 URLs)</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                {formData.images.map((url, index) => (
+                                {/* Existing brand, price, gender fields */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Brand</label>
                                     <input
-                                        key={index}
-                                        type="url"
-                                        value={url}
-                                        onChange={(e) => handleImageChange(index, e.target.value)}
-                                        className="w-full px-4 py-2 border rounded-lg"
-                                        placeholder={`Image URL ${index + 1}`}
+                                        type="text"
+                                        name="company"
+                                        value={formData.company}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
                                     />
-                                ))}
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* Category-specific Fields */}
-                        {formData.productCategory === 'Watches' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Watch Specifications</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Movement Type</label>
-                                        <select
-                                            name="movement"
-                                            value={formData.movement}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {['Quartz', 'Automatic', 'Mechanical', 'Smart'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Material</label>
-                                        <select
-                                            name="material"
-                                            value={formData.material}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {['Stainless Steel', 'Titanium', 'Gold', 'Rose Gold', 'Ceramic'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Glass Type</label>
-                                        <select
-                                            name="glass"
-                                            value={formData.glass}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {['Mineral Glass', 'Sapphire Crystal', 'Acrylic'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Water Resistance</label>
-                                        <select
-                                            name="waterResistance"
-                                            value={formData.waterResistance}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {['30 m', '50 m', '100 m', '200 m', '300 m'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {/* Add more watch-specific fields as needed */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Case Material</label>
-                                        <select
-                                            name="caseMaterial"
-                                            value={formData.caseMaterial}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            {['Stainless Steel', 'Titanium', 'Gold', 'Rose Gold', 'Ceramic', 'Carbon Fiber'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
+                                    <input
+                                        type="number"
+                                        name="price"
+                                        value={formData.price}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Name</label>
-                                        <input
-                                            type="text"
-                                            name="collection"
-                                            value={formData.collection}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Year</label>
-                                        <input
-                                            type="number"
-                                            name="collectionYear"
-                                            value={formData.collectionYear}
-                                            onChange={handleChange}
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
-                                        <input
-                                            type="text"
-                                            name="countryOfOrigin"
-                                            value={formData.countryOfOrigin}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Hand Type</label>
-                                        <select
-                                            name="handType"
-                                            value={formData.handType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            {['2-Hand', '3-Hand', 'Chronograph', 'Skeleton'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
-                                        <input
-                                            type="text"
-                                            name="globalIdentifierValue"
-                                            value={formData.globalIdentifierValue}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
-                                        <input
-                                            type="text"
-                                            name="manufacturedBy"
-                                            value={formData.manufacturedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Imported By</label>
-                                        <input
-                                            type="text"
-                                            name="importedBy"
-                                            value={formData.importedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Featured Product</label>
-                                        <div className="mt-2">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="featured"
-                                                    checked={formData.featured}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">Mark as featured</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Stock Management</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="stock"
-                                                    checked={formData.stock}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">In Stock</span>
-                                            </label>
-                                            <input
-                                                type="number"
-                                                name="stockNumber"
-                                                value={formData.stockNumber}
-                                                onChange={handleChange}
-                                                placeholder="Stock quantity"
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            />
-                                        </div>
-                                    </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Gender/Sex</label>
+                                    <select
+                                        name="gender"
+                                        value={formData.gender}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                                        required
+                                    >
+                                        <option value="Unisex">Unisex</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
                                 </div>
                             </div>
-                        )}
 
-                        {formData.productCategory === 'Shoes' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Shoe Specifications</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Shoe Type</label>
-                                        <select
-                                            name="shoeType"
-                                            value={formData.shoeType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Type</option>
-                                            {['Sneakers', 'Formal', 'Boots', 'Sports', 'Casual', 'Sandals'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Closure Type</label>
-                                        <select
-                                            name="closureType"
-                                            value={formData.closureType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Closure</option>
-                                            {['Lace-up', 'Slip-on', 'Velcro', 'Buckle', 'Zip'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Size Range</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="number"
-                                                name="shoeSize"
-                                                value={formData.shoeSize}
+                            {/* Product Images Section */}
+                            <div className="col-span-2 space-y-4">
+                                <h4 className="text-lg font-semibold">Product Images (4 URLs)</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {formData.images.map((url, index) => (
+                                        <input
+                                            key={index}
+                                            type="url"
+                                            value={url}
+                                            onChange={(e) => handleImageChange(index, e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg"
+                                            placeholder={`Image URL ${index + 1}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="col-span-2 space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Section 2: Seller Information (New) */}
+                        <div className="space-y-4 sm:space-y-6">
+                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 border-b pb-2">
+                                Seller Information
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                {/* Basic Info */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Seller Name</label>
+                                    <input
+                                        type="text"
+                                        name="sellerName"
+                                        value={formData.sellerName}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        name="sellerPhone"
+                                        value={formData.sellerPhone}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                                    <input
+                                        type="email"
+                                        name="sellerEmail"
+                                        value={formData.sellerEmail}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">GSTIN</label>
+                                    <input
+                                        type="text"
+                                        name="sellerGSTIN"
+                                        value={formData.sellerGSTIN}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+
+                                {/* Full Width Address Field */}
+                                <div className="col-span-1 sm:col-span-2 space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                                    <textarea
+                                        name="sellerAddress"
+                                        value={formData.sellerAddress}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                        rows={3}
+                                    />
+                                </div>
+
+                                {/* Location Details */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">City</label>
+                                    <input
+                                        type="text"
+                                        name="sellerCity"
+                                        value={formData.sellerCity}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">State</label>
+                                    <input
+                                        type="text"
+                                        name="sellerState"
+                                        value={formData.sellerState}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Pincode</label>
+                                    <input
+                                        type="text"
+                                        name="sellerPincode"
+                                        value={formData.sellerPincode}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">PAN Number</label>
+                                    <input
+                                        type="text"
+                                        name="sellerPAN"
+                                        value={formData.sellerPAN}
+                                        onChange={handleChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Additional Specifications */}
+                        <div className="space-y-6">
+                            <h3 className="text-xl font-semibold text-gray-900 border-b pb-2">Additional Specifications</h3>
+                            {/* Keep all your existing category-specific fields here */}
+                            {formData.productCategory === 'Watches' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Watch Specifications</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Movement Type</label>
+                                            <select
+                                                name="movement"
+                                                value={formData.movement}
                                                 onChange={handleChange}
-                                                placeholder="Size"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                {['Quartz', 'Automatic', 'Mechanical', 'Smart'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Material</label>
+                                            <select
+                                                name="material"
+                                                value={formData.material}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                {['Stainless Steel', 'Titanium', 'Gold', 'Rose Gold', 'Ceramic'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Glass Type</label>
+                                            <select
+                                                name="glass"
+                                                value={formData.glass}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                {['Mineral Glass', 'Sapphire Crystal', 'Acrylic'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Water Resistance</label>
+                                            <select
+                                                name="waterResistance"
+                                                value={formData.waterResistance}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                {['30 m', '50 m', '100 m', '200 m', '300 m'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {/* Add more watch-specific fields as needed */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Case Material</label>
+                                            <select
+                                                name="caseMaterial"
+                                                value={formData.caseMaterial}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                {['Stainless Steel', 'Titanium', 'Gold', 'Rose Gold', 'Ceramic', 'Carbon Fiber'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Name</label>
+                                            <input
+                                                type="text"
+                                                name="collection"
+                                                value={formData.collection}
+                                                onChange={handleChange}
                                                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 required
                                             />
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Year</label>
-                                        <input
-                                            type="number"
-                                            name="collectionYear"
-                                            value={formData.collectionYear}
-                                            onChange={handleChange}
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
-                                        <input
-                                            type="text"
-                                            name="countryOfOrigin"
-                                            value={formData.countryOfOrigin}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
-                                        <input
-                                            type="text"
-                                            name="globalIdentifierValue"
-                                            value={formData.globalIdentifierValue}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
-                                        <input
-                                            type="text"
-                                            name="manufacturedBy"
-                                            value={formData.manufacturedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Imported By</label>
-                                        <input
-                                            type="text"
-                                            name="importedBy"
-                                            value={formData.importedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Featured Product</label>
-                                        <div className="mt-2">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="featured"
-                                                    checked={formData.featured}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">Mark as featured</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Stock Management</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="stock"
-                                                    checked={formData.stock}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">In Stock</span>
-                                            </label>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Year</label>
                                             <input
                                                 type="number"
-                                                name="stockNumber"
-                                                value={formData.stockNumber}
+                                                name="collectionYear"
+                                                value={formData.collectionYear}
                                                 onChange={handleChange}
-                                                placeholder="Stock quantity"
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                min="1900"
+                                                max={new Date().getFullYear() + 1}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             />
                                         </div>
-                                    </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Sole Material</label>
-                                        <select
-                                            name="soleMaterial"
-                                            value={formData.soleMaterial}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Sole Material</option>
-                                            {['Rubber', 'PU', 'EVA', 'TPR', 'Leather', 'Phylon'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {formData.productCategory === 'Bags' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Bag Specifications</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Bag Type</label>
-                                        <select
-                                            name="bagType"
-                                            value={formData.bagType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Type</option>
-                                            {['Backpack', 'Handbag', 'Shoulder Bag', 'Tote', 'Clutch', 'Travel Bag'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Closure Type</label>
-                                        <select
-                                            name="bagClosureType"
-                                            value={formData.bagClosureType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Closure Type</option>
-                                            {[
-                                                'Zipper',
-                                                'Button',
-                                                'Magnetic Snap',
-                                                'Buckle',
-                                                'Drawstring',
-                                                'Flap',
-                                                'Toggle',
-                                                'Hook and Loop'
-                                            ].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Material</label>
-                                        <select
-                                            name="bagMaterial"
-                                            value={formData.bagMaterial}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Material</option>
-                                            {['Leather', 'Canvas', 'Nylon', 'Polyester', 'Cotton', 'Synthetic'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Dimensions (cm)</label>
-                                        <input
-                                            type="text"
-                                            name="dimensions"
-                                            value={formData.dimensions}
-                                            onChange={handleChange}
-                                            placeholder="Length x Width x Height"
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Year</label>
-                                        <input
-                                            type="number"
-                                            name="collectionYear"
-                                            value={formData.collectionYear}
-                                            onChange={handleChange}
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
-                                        <input
-                                            type="text"
-                                            name="countryOfOrigin"
-                                            value={formData.countryOfOrigin}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
-                                        <input
-                                            type="text"
-                                            name="globalIdentifierValue"
-                                            value={formData.globalIdentifierValue}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
-                                        <input
-                                            type="text"
-                                            name="manufacturedBy"
-                                            value={formData.manufacturedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Imported By</label>
-                                        <input
-                                            type="text"
-                                            name="importedBy"
-                                            value={formData.importedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Featured Product</label>
-                                        <div className="mt-2">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="featured"
-                                                    checked={formData.featured}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">Mark as featured</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Stock Management</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="stock"
-                                                    checked={formData.stock}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">In Stock</span>
-                                            </label>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
                                             <input
-                                                type="number"
-                                                name="stockNumber"
-                                                value={formData.stockNumber}
+                                                type="text"
+                                                name="countryOfOrigin"
+                                                value={formData.countryOfOrigin}
                                                 onChange={handleChange}
-                                                placeholder="Stock quantity"
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Hand Type</label>
+                                            <select
+                                                name="handType"
+                                                value={formData.handType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                {['2-Hand', '3-Hand', 'Chronograph', 'Skeleton'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
+                                            <input
+                                                type="text"
+                                                name="globalIdentifierValue"
+                                                value={formData.globalIdentifierValue}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                            <input
+                                                type="text"
+                                                name="manufacturedBy"
+                                                value={formData.manufacturedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Imported By</label>
+                                            <input
+                                                type="text"
+                                                name="importedBy"
+                                                value={formData.importedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Featured Product</label>
+                                            <div className="mt-2">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="featured"
+                                                        checked={formData.featured}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">Mark as featured</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Stock Management</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="stock"
+                                                        checked={formData.stock}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">In Stock</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="stockNumber"
+                                                    value={formData.stockNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="Stock quantity"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {formData.productCategory === 'Fashion' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Fashion Specifications</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Clothing Type</label>
-                                        <select
-                                            name="clothingType"
-                                            value={formData.clothingType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Type</option>
-                                            {['T-Shirt', 'Shirt', 'Jeans', 'Pants', 'Dress', 'Jacket', 'Sweater'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Size</label>
-                                        <select
-                                            name="size"
-                                            value={formData.size}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Size</option>
-                                            {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Pattern</label>
-                                        <select
-                                            name="pattern"
-                                            value={formData.pattern}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value="">Select Pattern</option>
-                                            {['Solid', 'Printed', 'Striped', 'Checked', 'Floral'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Year</label>
-                                        <input
-                                            type="number"
-                                            name="collectionYear"
-                                            value={formData.collectionYear}
-                                            onChange={handleChange}
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
-                                        <input
-                                            type="text"
-                                            name="countryOfOrigin"
-                                            value={formData.countryOfOrigin}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
-                                        <input
-                                            type="text"
-                                            name="globalIdentifierValue"
-                                            value={formData.globalIdentifierValue}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
-                                        <input
-                                            type="text"
-                                            name="manufacturedBy"
-                                            value={formData.manufacturedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Imported By</label>
-                                        <input
-                                            type="text"
-                                            name="importedBy"
-                                            value={formData.importedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Featured Product</label>
-                                        <div className="mt-2">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="featured"
-                                                    checked={formData.featured}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">Mark as featured</span>
-                                            </label>
+                            {formData.productCategory === 'Shoes' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Shoe Specifications</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Shoe Type</label>
+                                            <select
+                                                name="shoeType"
+                                                value={formData.shoeType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Type</option>
+                                                {['Sneakers', 'Formal', 'Boots', 'Sports', 'Casual', 'Sandals'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Stock Management</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <label className="inline-flex items-center">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Closure Type</label>
+                                            <select
+                                                name="closureType"
+                                                value={formData.closureType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Closure</option>
+                                                {['Lace-up', 'Slip-on', 'Velcro', 'Buckle', 'Zip'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Size Range</label>
+                                            <div className="flex gap-2">
                                                 <input
-                                                    type="checkbox"
-                                                    name="stock"
-                                                    checked={formData.stock}
+                                                    type="number"
+                                                    name="shoeSize"
+                                                    value={formData.shoeSize}
                                                     onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    placeholder="Size"
+                                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    required
                                                 />
-                                                <span className="ml-2">In Stock</span>
-                                            </label>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Year</label>
                                             <input
                                                 type="number"
-                                                name="stockNumber"
-                                                value={formData.stockNumber}
+                                                name="collectionYear"
+                                                value={formData.collectionYear}
                                                 onChange={handleChange}
-                                                placeholder="Stock quantity"
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                min="1900"
+                                                max={new Date().getFullYear() + 1}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             />
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Fabric</label>
-                                        <select
-                                            name="fabric"
-                                            value={formData.fabric}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Fabric</option>
-                                            {[
-                                                'Cotton',
-                                                'Polyester',
-                                                'Wool',
-                                                'Linen',
-                                                'Silk',
-                                                'Denim',
-                                                'Rayon',
-                                                'Nylon',
-                                                'Spandex',
-                                                'Blend'
-                                            ].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
-                        {formData.productCategory === 'Electronics' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Electronics Specifications</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Device Type</label>
-                                        <select
-                                            name="electronicType"
-                                            value={formData.electronicType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Type</option>
-                                            {['Mobile Phone', 'Headphones', 'Charger', 'Power Bank', 'USB Device'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Model Number</label>
-                                        <input
-                                            type="text"
-                                            name="model"
-                                            value={formData.model}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Warranty Period</label>
-                                        <select
-                                            name="warrantyPeriod"
-                                            value={formData.warrantyPeriod}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {['6 Months', '12 Months', '24 Months', '36 Months'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Year</label>
-                                        <input
-                                            type="number"
-                                            name="collectionYear"
-                                            value={formData.collectionYear}
-                                            onChange={handleChange}
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Imported By</label>
-                                        <input
-                                            type="text"
-                                            name="importedBy"
-                                            value={formData.importedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Specifications</label>
-                                        <textarea
-                                            name="specifications"
-                                            value={formData.specifications}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Enter device specifications"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
-                                        <input
-                                            type="text"
-                                            name="manufacturedBy"
-                                            value={formData.manufacturedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Featured Product</label>
-                                        <div className="mt-2">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="featured"
-                                                    checked={formData.featured}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">Mark as featured</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Stock Management</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="stock"
-                                                    checked={formData.stock}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">In Stock</span>
-                                            </label>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
                                             <input
-                                                type="number"
-                                                name="stockNumber"
-                                                value={formData.stockNumber}
+                                                type="text"
+                                                name="countryOfOrigin"
+                                                value={formData.countryOfOrigin}
                                                 onChange={handleChange}
-                                                placeholder="Stock quantity"
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
+                                            <input
+                                                type="text"
+                                                name="globalIdentifierValue"
+                                                value={formData.globalIdentifierValue}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                            <input
+                                                type="text"
+                                                name="manufacturedBy"
+                                                value={formData.manufacturedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Imported By</label>
+                                            <input
+                                                type="text"
+                                                name="importedBy"
+                                                value={formData.importedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Featured Product</label>
+                                            <div className="mt-2">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="featured"
+                                                        checked={formData.featured}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">Mark as featured</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Stock Management</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="stock"
+                                                        checked={formData.stock}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">In Stock</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="stockNumber"
+                                                    value={formData.stockNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="Stock quantity"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Sole Material</label>
+                                            <select
+                                                name="soleMaterial"
+                                                value={formData.soleMaterial}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Sole Material</option>
+                                                {['Rubber', 'PU', 'EVA', 'TPR', 'Leather', 'Phylon'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {formData.productCategory === 'Accessories' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Accessories Specifications</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Accessory Type</label>
-                                        <select
-                                            name="accessoryType"
-                                            value={formData.accessoryType}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Type</option>
-                                            {['Wallet', 'Belt', 'Sunglasses', 'Scarf', 'Hat', 'Gloves'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Material</label>
-                                        <select
-                                            name="accessoryMaterial"
-                                            value={formData.accessoryMaterial}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        >
-                                            <option value="">Select Material</option>
-                                            {['Leather', 'Metal', 'Plastic', 'Fabric', 'Wood'].map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection Year</label>
-                                        <input
-                                            type="number"
-                                            name="collectionYear"
-                                            value={formData.collectionYear}
-                                            onChange={handleChange}
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
-                                        <input
-                                            type="text"
-                                            name="countryOfOrigin"
-                                            value={formData.countryOfOrigin}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
-                                        <input
-                                            type="text"
-                                            name="globalIdentifierValue"
-                                            value={formData.globalIdentifierValue}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
-                                        <input
-                                            type="text"
-                                            name="manufacturedBy"
-                                            value={formData.manufacturedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Imported By</label>
-                                        <input
-                                            type="text"
-                                            name="importedBy"
-                                            value={formData.importedBy}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Featured Product</label>
-                                        <div className="mt-2">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="featured"
-                                                    checked={formData.featured}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">Mark as featured</span>
-                                            </label>
+                            {formData.productCategory === 'Bags' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Bag Specifications</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Bag Type</label>
+                                            <select
+                                                name="bagType"
+                                                value={formData.bagType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Type</option>
+                                                {['Backpack', 'Handbag', 'Shoulder Bag', 'Tote', 'Clutch', 'Travel Bag'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Stock Management</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="stock"
-                                                    checked={formData.stock}
-                                                    onChange={handleChange}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                                <span className="ml-2">In Stock</span>
-                                            </label>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Closure Type</label>
+                                            <select
+                                                name="bagClosureType"
+                                                value={formData.bagClosureType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Closure Type</option>
+                                                {[
+                                                    'Zipper',
+                                                    'Button',
+                                                    'Magnetic Snap',
+                                                    'Buckle',
+                                                    'Drawstring',
+                                                    'Flap',
+                                                    'Toggle',
+                                                    'Hook and Loop'
+                                                ].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Material</label>
+                                            <select
+                                                name="bagMaterial"
+                                                value={formData.bagMaterial}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Material</option>
+                                                {['Leather', 'Canvas', 'Nylon', 'Polyester', 'Cotton', 'Synthetic'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Dimensions (cm)</label>
+                                            <input
+                                                type="text"
+                                                name="dimensions"
+                                                value={formData.dimensions}
+                                                onChange={handleChange}
+                                                placeholder="Length x Width x Height"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Year</label>
                                             <input
                                                 type="number"
-                                                name="stockNumber"
-                                                value={formData.stockNumber}
+                                                name="collectionYear"
+                                                value={formData.collectionYear}
                                                 onChange={handleChange}
-                                                placeholder="Stock quantity"
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                min="1900"
+                                                max={new Date().getFullYear() + 1}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
+                                            <input
+                                                type="text"
+                                                name="countryOfOrigin"
+                                                value={formData.countryOfOrigin}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
+                                            <input
+                                                type="text"
+                                                name="globalIdentifierValue"
+                                                value={formData.globalIdentifierValue}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                            <input
+                                                type="text"
+                                                name="manufacturedBy"
+                                                value={formData.manufacturedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Imported By</label>
+                                            <input
+                                                type="text"
+                                                name="importedBy"
+                                                value={formData.importedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Featured Product</label>
+                                            <div className="mt-2">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="featured"
+                                                        checked={formData.featured}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">Mark as featured</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Stock Management</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="stock"
+                                                        checked={formData.stock}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">In Stock</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="stockNumber"
+                                                    value={formData.stockNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="Stock quantity"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32"
-                                required
-                            />
+                            {formData.productCategory === 'Fashion' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Fashion Specifications</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Clothing Type</label>
+                                            <select
+                                                name="clothingType"
+                                                value={formData.clothingType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Type</option>
+                                                {['T-Shirt', 'Shirt', 'Jeans', 'Pants', 'Dress', 'Jacket', 'Sweater'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Size</label>
+                                            <select
+                                                name="size"
+                                                value={formData.size}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Size</option>
+                                                {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Pattern</label>
+                                            <select
+                                                name="pattern"
+                                                value={formData.pattern}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Select Pattern</option>
+                                                {['Solid', 'Printed', 'Striped', 'Checked', 'Floral'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Year</label>
+                                            <input
+                                                type="number"
+                                                name="collectionYear"
+                                                value={formData.collectionYear}
+                                                onChange={handleChange}
+                                                min="1900"
+                                                max={new Date().getFullYear() + 1}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
+                                            <input
+                                                type="text"
+                                                name="countryOfOrigin"
+                                                value={formData.countryOfOrigin}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
+                                            <input
+                                                type="text"
+                                                name="globalIdentifierValue"
+                                                value={formData.globalIdentifierValue}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                            <input
+                                                type="text"
+                                                name="manufacturedBy"
+                                                value={formData.manufacturedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Imported By</label>
+                                            <input
+                                                type="text"
+                                                name="importedBy"
+                                                value={formData.importedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Featured Product</label>
+                                            <div className="mt-2">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="featured"
+                                                        checked={formData.featured}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">Mark as featured</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Stock Management</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="stock"
+                                                        checked={formData.stock}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">In Stock</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="stockNumber"
+                                                    value={formData.stockNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="Stock quantity"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Fabric</label>
+                                            <select
+                                                name="fabric"
+                                                value={formData.fabric}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Fabric</option>
+                                                {[
+                                                    'Cotton',
+                                                    'Polyester',
+                                                    'Wool',
+                                                    'Linen',
+                                                    'Silk',
+                                                    'Denim',
+                                                    'Rayon',
+                                                    'Nylon',
+                                                    'Spandex',
+                                                    'Blend'
+                                                ].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {formData.productCategory === 'Electronics' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Electronics Specifications</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Device Type</label>
+                                            <select
+                                                name="electronicType"
+                                                value={formData.electronicType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Type</option>
+                                                {['Mobile Phone', 'Headphones', 'Charger', 'Power Bank', 'USB Device'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Model Number</label>
+                                            <input
+                                                type="text"
+                                                name="model"
+                                                value={formData.model}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Warranty Period</label>
+                                            <select
+                                                name="warrantyPeriod"
+                                                value={formData.warrantyPeriod}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                {['6 Months', '12 Months', '24 Months', '36 Months'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Year</label>
+                                            <input
+                                                type="number"
+                                                name="collectionYear"
+                                                value={formData.collectionYear}
+                                                onChange={handleChange}
+                                                min="1900"
+                                                max={new Date().getFullYear() + 1}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Imported By</label>
+                                            <input
+                                                type="text"
+                                                name="importedBy"
+                                                value={formData.importedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Specifications</label>
+                                            <textarea
+                                                name="specifications"
+                                                value={formData.specifications}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="Enter device specifications"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                            <input
+                                                type="text"
+                                                name="manufacturedBy"
+                                                value={formData.manufacturedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Featured Product</label>
+                                            <div className="mt-2">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="featured"
+                                                        checked={formData.featured}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">Mark as featured</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Stock Management</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="stock"
+                                                        checked={formData.stock}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">In Stock</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="stockNumber"
+                                                    value={formData.stockNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="Stock quantity"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {formData.productCategory === 'Accessories' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Accessories Specifications</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Accessory Type</label>
+                                            <select
+                                                name="accessoryType"
+                                                value={formData.accessoryType}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Type</option>
+                                                {['Wallet', 'Belt', 'Sunglasses', 'Scarf', 'Hat', 'Gloves'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Material</label>
+                                            <select
+                                                name="accessoryMaterial"
+                                                value={formData.accessoryMaterial}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            >
+                                                <option value="">Select Material</option>
+                                                {['Leather', 'Metal', 'Plastic', 'Fabric', 'Wood'].map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Collection Year</label>
+                                            <input
+                                                type="number"
+                                                name="collectionYear"
+                                                value={formData.collectionYear}
+                                                onChange={handleChange}
+                                                min="1900"
+                                                max={new Date().getFullYear() + 1}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Country of Origin</label>
+                                            <input
+                                                type="text"
+                                                name="countryOfOrigin"
+                                                value={formData.countryOfOrigin}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Global Identifier</label>
+                                            <input
+                                                type="text"
+                                                name="globalIdentifierValue"
+                                                value={formData.globalIdentifierValue}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Manufactured By</label>
+                                            <input
+                                                type="text"
+                                                name="manufacturedBy"
+                                                value={formData.manufacturedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Imported By</label>
+                                            <input
+                                                type="text"
+                                                name="importedBy"
+                                                value={formData.importedBy}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Featured Product</label>
+                                            <div className="mt-2">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="featured"
+                                                        checked={formData.featured}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">Mark as featured</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Stock Management</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="stock"
+                                                        checked={formData.stock}
+                                                        onChange={handleChange}
+                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                    />
+                                                    <span className="ml-2">In Stock</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="stockNumber"
+                                                    value={formData.stockNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="Stock quantity"
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {loading ? 'Adding...' : 'Add Product'}
+                            </button>
                         </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {loading ? 'Adding...' : 'Add Product'}
-                        </button>
                     </form>
                 </div>
             </div>
