@@ -108,7 +108,21 @@ const InputForm = () => {
         sellerState: '',
         sellerPincode: '',
         sellerGSTIN: '',
-        sellerPAN: ''
+        sellerPAN: '',
+
+        // Add these new warranty fields after the existing warranty field
+        warrantyDuration: '',
+        warrantyExpiry: '',
+        warrantyPhotoUrl: '',
+        warrantyProvider: '',
+        warrantyType: 'Manufacturer',
+        warrantyTerms: '',
+        warrantyStatus: 'Active',
+        extendedWarrantyAvailable: false,
+        extendedWarrantyPrice: '',
+        extendedWarrantyDuration: '',
+        warrantyRegistrationRequired: false,
+        warrantyRegistrationUrl: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -172,6 +186,26 @@ const InputForm = () => {
                     Pincode: formData.sellerPincode,
                     GSTIN: formData.sellerGSTIN,
                     PAN: formData.sellerPAN
+                },
+
+                // Add warranty information
+                Warranty: {
+                    Duration: formData.warrantyDuration,
+                    Expiry: formData.warrantyExpiry,
+                    PhotoUrl: formData.warrantyPhotoUrl,
+                    Provider: formData.warrantyProvider,
+                    Type: formData.warrantyType,
+                    Terms: formData.warrantyTerms,
+                    Status: formData.warrantyStatus,
+                    ExtendedWarranty: {
+                        Available: formData.extendedWarrantyAvailable,
+                        Price: formData.extendedWarrantyPrice,
+                        Duration: formData.extendedWarrantyDuration
+                    },
+                    Registration: {
+                        Required: formData.warrantyRegistrationRequired,
+                        Url: formData.warrantyRegistrationUrl
+                    }
                 }
             };
 
@@ -350,15 +384,37 @@ const InputForm = () => {
     return (
         <div className="min-h-screen bg-gray-200 text-gray-900">
             {/* Header section */}
-            <div className="h-64 overflow-hidden relative bg-gradient-to-r from-blue-50 to-indigo-50">
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center space-y-4">
-                        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Product Management</h1>
-                        <p className="text-gray-600 text-lg">Add products to the inventory</p>
+            <div className="relative">
+                {/* Background with gradient and pattern */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 opacity-75">
+                    <div className="absolute inset-0 bg-grid-pattern"></div>
+                </div>
+
+                {/* Header Content */}
+                <div className="relative h-48 sm:h-64 md:h-72 px-4 flex items-center justify-center">
+                    <div className="text-center space-y-3 sm:space-y-4 max-w-3xl mx-auto">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-gray-900 transition-all">
+                            Product Management
+                        </h1>
+                        <p className="text-base sm:text-lg md:text-xl text-gray-600 font-medium">
+                            Add products to the inventory
+                        </p>
+                        <div className="w-20 h-1 bg-blue-600 mx-auto rounded-full mt-4"></div>
                     </div>
                 </div>
-            </div>
 
+                {/* Decorative bottom curve */}
+                <div className="absolute bottom-0 left-0 right-0">
+                    <svg
+                        className="w-full h-8 sm:h-12 text-gray-200"
+                        viewBox="0 0 1440 54"
+                        preserveAspectRatio="none"
+                        fill="currentColor"
+                    >
+                        <path d="M0 22L120 16.7C240 11 480 1.00001 720 0.700012C960 1.00001 1200 11 1320 16.7L1440 22V54H1320C1200 54 960 54 720 54C480 54 240 54 120 54H0V22Z" />
+                    </svg>
+                </div>
+            </div>
             {/* Main form container */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
@@ -1594,13 +1650,198 @@ const InputForm = () => {
                                 </div>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                {loading ? 'Adding...' : 'Add Product'}
-                            </button>
+                            {/* Warranty Section */}
+                            <div className="space-y-6">
+                                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 border-b pb-2">
+                                    Warranty Information
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Duration</label>
+                                        <input
+                                            type="text"
+                                            name="warrantyDuration"
+                                            value={formData.warrantyDuration}
+                                            onChange={handleChange}
+                                            placeholder="e.g., 24 months"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Expiry</label>
+                                        <input
+                                            type="date"
+                                            name="warrantyExpiry"
+                                            value={formData.warrantyExpiry}
+                                            onChange={handleChange}
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Photo URL</label>
+                                        <input
+                                            type="url"
+                                            name="warrantyPhotoUrl"
+                                            value={formData.warrantyPhotoUrl}
+                                            onChange={handleChange}
+                                            placeholder="Enter warranty card photo URL"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Provider</label>
+                                        <input
+                                            type="text"
+                                            name="warrantyProvider"
+                                            value={formData.warrantyProvider}
+                                            onChange={handleChange}
+                                            placeholder="Enter warranty provider name"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Type</label>
+                                        <select
+                                            name="warrantyType"
+                                            value={formData.warrantyType}
+                                            onChange={handleChange}
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        >
+                                            <option value="Manufacturer">Manufacturer Warranty</option>
+                                            <option value="Seller">Seller Warranty</option>
+                                            <option value="Third Party">Third Party Warranty</option>
+                                            <option value="International">International Warranty</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Status</label>
+                                        <select
+                                            name="warrantyStatus"
+                                            value={formData.warrantyStatus}
+                                            onChange={handleChange}
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        >
+                                            <option value="Active">Active</option>
+                                            <option value="Expired">Expired</option>
+                                            <option value="Pending">Pending</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="col-span-1 sm:col-span-2 space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Terms & Conditions</label>
+                                        <textarea
+                                            name="warrantyTerms"
+                                            value={formData.warrantyTerms}
+                                            onChange={handleChange}
+                                            rows={4}
+                                            placeholder="Enter warranty terms and conditions"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div className="col-span-1 sm:col-span-2 space-y-4">
+                                        <label className="block text-sm font-medium text-gray-700">Extended Warranty Options</label>
+                                        <div className="space-y-4">
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    name="extendedWarrantyAvailable"
+                                                    checked={formData.extendedWarrantyAvailable}
+                                                    onChange={handleChange}
+                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                />
+                                                <span className="ml-2 text-sm sm:text-base">Extended Warranty Available</span>
+                                            </label>
+                                            {formData.extendedWarrantyAvailable && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <input
+                                                        type="text"
+                                                        name="extendedWarrantyPrice"
+                                                        value={formData.extendedWarrantyPrice}
+                                                        onChange={handleChange}
+                                                        placeholder="Extended warranty price"
+                                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        name="extendedWarrantyDuration"
+                                                        value={formData.extendedWarrantyDuration}
+                                                        onChange={handleChange}
+                                                        placeholder="Duration (e.g., 12 months)"
+                                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-1 sm:col-span-2 space-y-4">
+                                        <label className="block text-sm font-medium text-gray-700">Warranty Registration</label>
+                                        <div className="space-y-4">
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    name="warrantyRegistrationRequired"
+                                                    checked={formData.warrantyRegistrationRequired}
+                                                    onChange={handleChange}
+                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                />
+                                                <span className="ml-2 text-sm sm:text-base">Registration Required</span>
+                                            </label>
+                                            {formData.warrantyRegistrationRequired && (
+                                                <input
+                                                    type="url"
+                                                    name="warrantyRegistrationUrl"
+                                                    value={formData.warrantyRegistrationUrl}
+                                                    onChange={handleChange}
+                                                    placeholder="Registration URL"
+                                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submit Button */}
+                            <div className="pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    fill="currentColor"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8v5l4.5-4.5L20 9l-8 8H4z"
+                                                />
+                                            </svg>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        'Add Product'
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

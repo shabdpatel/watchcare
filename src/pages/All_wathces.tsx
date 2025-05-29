@@ -376,7 +376,7 @@ const AllWatches = () => {
                         <div className="p-4 border-t border-gray-200 bg-white">
                             <button
                                 onClick={() => setIsSortOpen(false)}
-                                className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                                className="w-full py-3 bg-gray-400 hover:bg-gray-300 rounded-lg transition-colors"
                             >
                                 Apply Sorting
                             </button>
@@ -493,7 +493,7 @@ const AllWatches = () => {
 
                                         <div className="p-4 space-y-1">
                                             <div className="flex justify-between items-start">
-                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900">
+                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
                                                     {watch.Company}
                                                 </h3>
                                                 <div className="flex items-center gap-1">
