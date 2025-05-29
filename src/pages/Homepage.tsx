@@ -303,11 +303,11 @@ const Homepage = () => {
                 </div>
             </div>
 
-            {/* New Trending Products Section */}
+            {/* Trending Now Section */}
             <div className="bg-white py-16">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex justify-between items-center mb-12">
-                        <h2 className="text-3xl font-light uppercase tracking-wider text-gray-900">
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12">
+                        <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-4 sm:mb-0">
                             Trending Now
                         </h2>
                         <Link
@@ -317,7 +317,8 @@ const Homepage = () => {
                             View All <ArrowRightIcon className="w-4 h-4" />
                         </Link>
                     </div>
-                    <div className="grid grid-cols-3 gap-8">
+                    {/* Change grid-cols-3 to be responsive */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
                         {trendingProducts.map((product) => (
                             <Link
                                 to={product.collectionName === 'Watches' ? '/all_watches' : `/${product.collectionName.toLowerCase()}`}
@@ -442,15 +443,16 @@ const Homepage = () => {
             </div>
 
             {/* New Arrivals Banner */}
-            <div className="bg-gray-900 py-20">
+            <div className="bg-gray-900 py-16 sm:py-20">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-light text-white uppercase tracking-wider mb-4">
+                    <div className="text-center mb-8 sm:mb-12">
+                        <h2 className="text-2xl sm:text-3xl font-light text-white uppercase tracking-wider mb-2 sm:mb-4">
                             New Arrivals
                         </h2>
                         <p className="text-gray-400">Be the first to discover our latest additions</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-8">
+                    {/* Change grid-cols-3 to be responsive */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
                         {newArrivals.map((product) => (
                             <Link
                                 to={product.collectionName === 'Watches' ? '/all_watches' : `/${product.collectionName.toLowerCase()}`}
