@@ -27,6 +27,8 @@ import { CartProvider } from './context/CartContext';
 import Cart from './components/Cart';
 import ChatBot from './components/ChatBot';
 import Sells from "./components/Sells";
+import AdminPanel from './components/AdminPanel';
+
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
 
@@ -79,6 +81,16 @@ function AppContent() {
               }
             />
             <Route path="/register" element={<Register />} />
+            <Route
+              path="/admin"
+              element={
+                currentUser?.email === 'shabdpatel0@gmail.com' ? (
+                  <AdminPanel />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
           </Routes>
         </div>
         <Footer />

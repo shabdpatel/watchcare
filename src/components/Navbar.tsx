@@ -11,7 +11,8 @@ import {
     UserIcon,
     ShoppingBagIcon,
     BuildingStorefrontIcon,
-    ArrowRightOnRectangleIcon
+    ArrowRightOnRectangleIcon,
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
@@ -116,6 +117,18 @@ const Navbar = () => {
                         <BuildingStorefrontIcon className="w-5 h-5 mr-2" />
                         Become a Seller
                     </Link>
+
+                    {/* Add Admin Panel link for specific user */}
+                    {currentUser && currentUser.email === 'shabdpatel0@gmail.com' && (
+                        <Link
+                            to="/admin"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black"
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                        >
+                            <ShieldCheckIcon className="w-5 h-5 mr-2" />
+                            Admin Panel
+                        </Link>
+                    )}
 
                     <button
                         onClick={() => {
