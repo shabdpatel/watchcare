@@ -9,14 +9,17 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Add this check before registering service worker
+// Replace the top-level await with a regular promise chain
 if ('serviceWorker' in navigator) {
-  try {
-    const registration = await navigator.serviceWorker.register('/service-worker.js', {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js', {
       scope: '/'
-    });
-    console.log('ServiceWorker registration successful');
-  } catch (error) {
-    console.log('ServiceWorker registration failed:', error);
-  }
+    })
+      .then((registration) => {
+        console.log('ServiceWorker registration successful');
+      })
+      .catch((error) => {
+        console.log('ServiceWorker registration failed:', error);
+      });
+  });
 }
