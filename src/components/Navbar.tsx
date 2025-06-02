@@ -65,15 +65,27 @@ const Navbar = () => {
 
     const renderAccountLink = () => (
         <div className="relative">
-            <button
-                onClick={() => currentUser && setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="text-gray-700 hover:text-black transition-colors focus:outline-none"
-                title={currentUser ? "Account Menu" : "Login"}
-            >
-                <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
-            </button>
+            {currentUser ? (
+                // If user is logged in, show dropdown toggle button
+                <button
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    className="text-gray-700 hover:text-black transition-colors focus:outline-none"
+                    title="Account Menu"
+                >
+                    <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
+                </button>
+            ) : (
+                // If user is not logged in, show link to login page
+                <Link
+                    to="/login"
+                    className="text-gray-700 hover:text-black transition-colors"
+                    title="Login"
+                >
+                    <RiAccountCircleLine className="w-6 h-6 cursor-pointer" />
+                </Link>
+            )}
 
-            {/* Dropdown Menu for logged-in users */}
+            {/* Dropdown Menu - only show if user is logged in and dropdown is open */}
             {currentUser && isProfileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-100 animate-fadeIn profile-dropdown">
                     <div className="px-4 py-2 border-b border-gray-100">
@@ -149,10 +161,13 @@ const Navbar = () => {
         <Link
             to={currentUser ? "/profile" : "/login"}
             className="flex flex-col items-center text-gray-700 hover:text-black transition-colors"
-            onClick={() => setIsMenuOpen(false)}
+            onClick={() => {
+                setIsMenuOpen(false);
+                setIsProfileDropdownOpen(false);
+            }}
         >
             <RiAccountCircleLine className="w-6 h-6" />
-            <span className="text-xs mt-1">{currentUser ? "Profile" : "Account"}</span>
+            <span className="text-xs mt-1">{currentUser ? "Profile" : "Login"}</span>
         </Link>
     );
 

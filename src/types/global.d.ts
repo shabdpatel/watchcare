@@ -5,4 +5,5 @@ interface Window {
         maximize: () => void;
     };
     Tawk_LoadStart?: Date;
+    Razorpay: any;
 }

@@ -28,6 +28,7 @@ import Cart from './components/Cart';
 import ChatBot from './components/ChatBot';
 import Sells from "./components/Sells";
 import AdminPanel from './components/AdminPanel';
+import CheckoutFlow from "./components/CheckoutFlow";
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -52,6 +53,7 @@ function AppContent() {
             <Route path="/accessories" element={<Accessories />} />
             <Route path="/electronics" element={<Electronics />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<CheckoutFlow />} />
             <Route path="/sells" element={<Sells />} />
             <Route path="/login" element={<Login />} />
 
