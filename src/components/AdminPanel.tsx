@@ -213,6 +213,20 @@ const AdminPanel = () => {
         navigate(route);
     };
 
+    const handleUpdateStatus = async (orderId) => {
+        try {
+            const orderRef = doc(db, 'orders', orderId);
+            await updateDoc(orderRef, {
+                status: 'completed'
+            });
+            toast.success('Order status updated');
+            fetchData();
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            toast.error('Failed to update order status');
+        }
+    };
+
     const renderDashboard = () => (
         // Update grid classes for better responsiveness
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
@@ -630,13 +644,16 @@ const AdminPanel = () => {
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                                                    Order ID
-                                                </th>
-                                                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                                                    Customer
+                                                    Order Details
                                                 </th>
                                                 <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                                                    Total
+                                                    Customer Info
+                                                </th>
+                                                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                                    Product
+                                                </th>
+                                                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                                    Payment & Delivery
                                                 </th>
                                                 <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
                                                     Status
@@ -646,25 +663,101 @@ const AdminPanel = () => {
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {orders.map(order => (
                                                 <tr key={order.id} className="hover:bg-gray-50">
-                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
-                                                        <div className="flex flex-col sm:flex-row gap-1">
-                                                            <span>{order.id}</span>
-                                                            <span className="sm:hidden text-gray-500">{order.customerEmail}</span>
+                                                    <td className="px-4 sm:px-6 py-4">
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm font-medium text-gray-900">
+                                                                Order #{order.id.slice(-8)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                Placed: {order.orderDate?.toDate().toLocaleString()}
+                                                            </p>
+                                                            <p className="text-sm font-medium text-rose-600">
+                                                                ₹{order.amount?.toLocaleString()}
+                                                            </p>
                                                         </div>
                                                     </td>
-                                                    <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
-                                                        {order.customerEmail}
+                                                    <td className="px-4 sm:px-6 py-4">
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm">
+                                                                <p className="font-medium">{order.shippingAddress?.name}</p>
+                                                                <p className="text-gray-500">{order.userId}</p>
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 space-y-1">
+                                                                <p>{order.shippingAddress?.address}</p>
+                                                                <p>{order.shippingAddress?.city}, {order.shippingAddress?.state}</p>
+                                                                <p>{order.shippingAddress?.pincode}</p>
+                                                            </div>
+                                                        </div>
                                                     </td>
-                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
-                                                        ₹{order.total?.toLocaleString()}
+                                                    <td className="px-4 sm:px-6 py-4">
+                                                        {order.product ? (
+                                                            <div className="flex items-center space-x-3">
+                                                                <div className="h-16 w-16 flex-shrink-0">
+                                                                    <img
+                                                                        src={order.product.Image}
+                                                                        alt={order.product.Company}
+                                                                        className="h-16 w-16 object-cover rounded-md"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium">
+                                                                        {order.product.Company}
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-500">
+                                                                        {order.product.Model}
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-500">
+                                                                        Qty: 1
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm text-gray-500">
+                                                                Product details not available
+                                                            </span>
+                                                        )}
                                                     </td>
-                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'completed'
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-yellow-100 text-yellow-800'
-                                                            }`}>
-                                                            {order.status}
-                                                        </span>
+                                                    <td className="px-4 sm:px-6 py-4">
+                                                        <div className="space-y-2">
+                                                            <div className="text-sm">
+                                                                <p className="font-medium">Payment Method</p>
+                                                                <p className="text-gray-500 capitalize">
+                                                                    {order.paymentMethod}
+                                                                    {order.paymentId && (
+                                                                        <span className="text-xs ml-1">
+                                                                            (ID: {order.paymentId.slice(-6)})
+                                                                        </span>
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-sm">
+                                                                <p className="font-medium">Delivery</p>
+                                                                <p className="text-gray-500">
+                                                                    Expected: {order.expectedDelivery}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-xs">
+                                                                <p className="text-gray-500">
+                                                                    Shipping: ₹{order.shippingFee || 2}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 sm:px-6 py-4">
+                                                        <div className="space-y-2">
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                                ${order.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                        'bg-red-100 text-red-800'}`}>
+                                                                {order.status}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(order.id)}
+                                                                className="text-xs text-blue-600 hover:text-blue-800"
+                                                            >
+                                                                Update Status
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}

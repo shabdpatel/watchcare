@@ -28,7 +28,9 @@ import Cart from './components/Cart';
 import ChatBot from './components/ChatBot';
 import Sells from "./components/Sells";
 import AdminPanel from './components/AdminPanel';
+import OrderSuccess from "./pages/OrderSuccess";
 import CheckoutFlow from "./components/CheckoutFlow";
+import Orders from './pages/Orders';
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
@@ -54,6 +56,9 @@ function AppContent() {
             <Route path="/electronics" element={<Electronics />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<CheckoutFlow />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/orders" element={<Orders />} />
+            {/* Redirects for specific paths */}
             <Route path="/sells" element={<Sells />} />
             <Route path="/login" element={<Login />} />
 

@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import {
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    increment,
+    arrayUnion
+} from 'firebase/firestore';
 import { db } from '../pages/firebase';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
@@ -12,7 +19,8 @@ import {
     ShieldCheckIcon,
     CreditCardIcon,
     ClockIcon,
-    ArrowLeftIcon
+    ArrowLeftIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 
 interface CheckoutFlowProps {
@@ -20,7 +28,18 @@ interface CheckoutFlowProps {
     onClose: () => void;
 }
 
-const DELIVERY_FEE = 0;
+const DELIVERY_FEE = 2; // Changed from 150 to 2
+const DELIVERY_DAYS = 10;
+
+// Add new interface for address
+interface Address {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+}
 
 const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
     const [step, setStep] = useState(1);
@@ -29,16 +48,24 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [isNewAddress, setIsNewAddress] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('');
+    const [newAddress, setNewAddress] = useState<Address>({
+        name: '',
+        address: '',
+        city: '',
+        state: '',
+        pincode: '',
+        phone: ''
+    });
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
     // Calculate delivery date (5 days from now)
-    const deliveryDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString();
+    const deliveryDate = new Date(Date.now() + DELIVERY_DAYS * 24 * 60 * 60 * 1000).toLocaleDateString();
 
     // Calculate order summary
     const orderSummary = {
         subtotal: product.Price,
-        shipping: DELIVERY_FEE,
+        shipping: DELIVERY_FEE, // Now shows ₹2 instead of "Free"
         total: product.Price + DELIVERY_FEE
     };
 
@@ -73,50 +100,197 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
     }, [currentUser]);
 
     const handlePayment = async (method) => {
-        if (method === 'cod') {
-            await createOrder('cod', null);
-            navigate('/order-success');
-        } else {
-            const options = {
-                key: 'rzp_test_T5M2JyEgw9JAXJ',
-                amount: orderSummary.total * 100,
-                currency: 'INR',
-                name: 'Watch Store',
-                description: `Purchase of ${product.Company} ${product.Model}`,
-                image: product.Image,
-                handler: async (response) => {
-                    await createOrder('online', response.razorpay_payment_id);
-                    navigate('/order-success');
-                },
-                prefill: {
-                    name: currentUser.displayName,
-                    email: currentUser.email,
-                    contact: selectedAddress?.phone
-                },
-                theme: { color: '#E11D48' }
-            };
+        try {
+            if (!currentUser) {
+                toast.error('Please login to continue');
+                navigate('/login');
+                return;
+            }
 
-            const razorpayInstance = new window.Razorpay(options);
-            razorpayInstance.open();
+            if (!selectedAddress) {
+                toast.error('Please select a delivery address');
+                return;
+            }
+
+            if (method === 'cod') {
+                await createOrder('cod', null);
+                navigate('/order-success');
+            } else {
+                const options = {
+                    key: 'rzp_live_UTHrYljhpKfSae', // Consider moving this to environment variables
+                    amount: orderSummary.total * 100, // Amount in paise
+                    currency: 'INR',
+                    name: 'Watch Store',
+                    description: `Purchase of ${product.Company || ''} ${product.Model || ''}`.trim(),
+                    image: product.Image || product.images?.[0],
+                    handler: async (response) => {
+                        try {
+                            if (response.razorpay_payment_id) {
+                                await createOrder('online', response.razorpay_payment_id);
+                                navigate('/order-success');
+                            } else {
+                                throw new Error('Payment failed');
+                            }
+                        } catch (error) {
+                            console.error('Payment processing error:', error);
+                            toast.error('Failed to process payment');
+                        }
+                    },
+                    prefill: {
+                        name: currentUser?.displayName || '',
+                        email: currentUser?.email || '',
+                        contact: selectedAddress?.phone || ''
+                    },
+                    theme: { color: '#E11D48' }
+                };
+
+                const razorpayInstance = new window.Razorpay(options);
+                razorpayInstance.open();
+            }
+        } catch (error) {
+            console.error('Payment error:', error);
+            toast.error('Payment failed. Please try again.');
         }
     };
 
     const createOrder = async (paymentMethod, paymentId) => {
-        const orderData = {
-            userId: currentUser.email,
-            productId: product.id,
-            quantity: 1,
-            amount: orderSummary.total,
-            paymentMethod,
-            paymentId,
-            shippingAddress: selectedAddress,
-            status: paymentMethod === 'cod' ? 'pending' : 'paid',
-            orderDate: new Date(),
-            expectedDelivery: deliveryDate
-        };
+        try {
+            if (!currentUser?.email) {
+                throw new Error('User not authenticated');
+            }
 
-        const orderId = paymentId || `order_${Date.now()}`;
-        await setDoc(doc(db, 'orders', orderId), orderData);
+            if (!selectedAddress) {
+                throw new Error('No shipping address selected');
+            }
+
+            if (!product?.id) {
+                throw new Error('Invalid product information');
+            }
+
+            // Add validation for required product fields
+            if (!product.Company || !product.Model || !product.Price) {
+                throw new Error('Invalid product details');
+            }
+
+            const productDoc = await getDoc(doc(db, product.category || 'Watches', product.id));
+            const productData = productDoc.data();
+            const sellerInfo = productData?.Seller;
+
+            const orderId = paymentId || `order_${Date.now()}`;
+            const orderData = {
+                // Basic order info
+                id: orderId,
+                userId: currentUser.email,
+                productId: product.id,
+                amount: orderSummary.total,
+                status: paymentMethod === 'cod' ? 'pending' : 'paid',
+                orderDate: new Date(),
+                expectedDelivery: deliveryDate,
+                paymentMethod: paymentMethod,
+                paymentId: paymentId || null,
+                shippingAddress: selectedAddress,
+
+                // Product details with null checks
+                product: {
+                    id: product.id,
+                    category: product.category || 'Watches',
+                    Company: product.Company || '',
+                    Model: product.Model || '',
+                    Price: product.Price || 0,
+                    Image: product.Image || product.images?.[0] || '',
+                    Description: product.Description || '',
+                },
+
+                // Payment details
+                payment: {
+                    method: paymentMethod,
+                    status: paymentMethod === 'cod' ? 'pending' : 'completed',
+                    amount: orderSummary.total,
+                    transactionId: paymentId || null,
+                },
+
+                // Seller information if available
+                seller: sellerInfo ? {
+                    name: sellerInfo.Name || '',
+                    email: sellerInfo.Email || '',
+                    phone: sellerInfo.Phone || '',
+                } : null,
+
+                // Metadata
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            // Save order in Firestore
+            await setDoc(doc(db, 'orders', orderId), orderData);
+
+            // Update product stock
+            const productRef = doc(db, product.category || 'Watches', product.id);
+            await updateDoc(productRef, {
+                Stock_Number: increment(-1)
+            });
+
+            // Update user's orders array
+            const userRef = doc(db, 'users', currentUser.email);
+            await updateDoc(userRef, {
+                orders: arrayUnion(orderId)
+            });
+
+            toast.success('Order placed successfully!');
+            navigate('/order-success');
+
+        } catch (error) {
+            console.error('Error creating order:', error);
+            toast.error(error.message || 'Failed to create order');
+            throw error;
+        }
+    };
+
+    const handleAddAddress = async () => {
+        if (!currentUser?.email) {
+            toast.error('Please login to continue');
+            return;
+        }
+
+        try {
+            const userRef = doc(db, 'users', currentUser.email);
+            const userDoc = await getDoc(userRef);
+            const userData = userDoc.data() || {};
+
+            // Create new address object
+            const newAddressData = {
+                shipping: {
+                    street: newAddress.address,
+                    city: newAddress.city,
+                    state: newAddress.state,
+                    postalCode: newAddress.pincode
+                }
+            };
+
+            // Update user document with new address
+            await setDoc(userRef, {
+                ...userData,
+                addresses: newAddressData,
+                personalInfo: {
+                    ...userData.personalInfo,
+                    firstName: newAddress.name.split(' ')[0],
+                    lastName: newAddress.name.split(' ').slice(1).join(' ')
+                },
+                contact: {
+                    ...userData.contact,
+                    phoneNumber: newAddress.phone
+                }
+            }, { merge: true });
+
+            // Update local state
+            setAddresses([...addresses, newAddress]);
+            setSelectedAddress(newAddress);
+            setIsNewAddress(false);
+            toast.success('Address added successfully');
+        } catch (error) {
+            console.error('Error adding address:', error);
+            toast.error('Failed to add address');
+        }
     };
 
     const renderStepIndicator = () => (
@@ -148,7 +322,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                                 alt={`${product.Company} ${product.Model}`}
                                 className="w-full h-full object-contain"
                                 onError={(e) => {
-                                    e.currentTarget.src = '/placeholder-watch.png'; // Add a placeholder image
+                                    e.currentTarget.src = '/placeholder-watch.png';
                                 }}
                             />
                         </div>
@@ -161,28 +335,33 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
 
                         {/* Product Specifications */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            {product.Movement && (
+                            {product.Material && (
                                 <div>
-                                    <span className="text-gray-500">Movement:</span>
-                                    <span className="ml-2">{product.Movement}</span>
+                                    <span className="text-gray-500">Material:</span>
+                                    <span className="ml-2">{product.Material}</span>
                                 </div>
                             )}
-                            {product.Glass && (
+                            {product.Color && (
                                 <div>
-                                    <span className="text-gray-500">Glass:</span>
-                                    <span className="ml-2">{product.Glass}</span>
+                                    <span className="text-gray-500">Color:</span>
+                                    <span className="ml-2">{product.Color}</span>
                                 </div>
                             )}
-                            {product.WaterResistance && (
+                            {product.AccessoryType && (
                                 <div>
-                                    <span className="text-gray-500">Water Resistance:</span>
-                                    <span className="ml-2">{product.WaterResistance}</span>
+                                    <span className="text-gray-500">Type:</span>
+                                    <span className="ml-2">{product.AccessoryType}</span>
                                 </div>
                             )}
+                            {/* Render Warranty Status if it exists */}
                             {product.Warranty && (
                                 <div>
                                     <span className="text-gray-500">Warranty:</span>
-                                    <span className="ml-2">{product.Warranty}</span>
+                                    <span className="ml-2">
+                                        {typeof product.Warranty === 'object'
+                                            ? product.Warranty.Duration || product.Warranty.Status
+                                            : product.Warranty}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -297,7 +476,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                         </div>
                         <div className="flex justify-between">
                             <span>Shipping</span>
-                            <span className="text-green-600">Free</span>
+                            <span>₹{DELIVERY_FEE}</span>
                         </div>
                         <div className="flex justify-between font-medium pt-2 border-t">
                             <span>Total</span>
@@ -323,6 +502,104 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                         <span>Your payment is secure and encrypted</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+
+    // Add new address form component
+    const renderNewAddressForm = () => (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Add New Address</h3>
+                    <button onClick={() => setIsNewAddress(false)} className="text-gray-500 hover:text-gray-700">
+                        <XMarkIcon className="w-5 h-5" />
+                    </button>
+                </div>
+                <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddAddress();
+                }} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input
+                            type="text"
+                            required
+                            value={newAddress.name}
+                            onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Address</label>
+                        <input
+                            type="text"
+                            required
+                            value={newAddress.address}
+                            onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">City</label>
+                            <input
+                                type="text"
+                                required
+                                value={newAddress.city}
+                                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">State</label>
+                            <input
+                                type="text"
+                                required
+                                value={newAddress.state}
+                                onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">PIN Code</label>
+                            <input
+                                type="text"
+                                required
+                                value={newAddress.pincode}
+                                onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                            <input
+                                type="tel"
+                                required
+                                value={newAddress.phone}
+                                onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex gap-4 mt-6">
+                        <button
+                            type="submit"
+                            className="flex-1 bg-rose-600 text-white py-2 rounded-md hover:bg-rose-700"
+                        >
+                            Save Address
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsNewAddress(false)}
+                            className="flex-1 border border-gray-300 py-2 rounded-md hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
@@ -421,16 +698,13 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Shipping</span>
-                                    <span className="text-green-600">Free</span>
+                                    <span>₹{DELIVERY_FEE}</span>
                                 </div>
                                 <div className="border-t pt-2 mt-2">
                                     <div className="flex justify-between font-semibold">
                                         <span>Total</span>
                                         <span>₹{orderSummary.total.toLocaleString()}</span>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        (Inclusive of all taxes)
-                                    </p>
                                 </div>
                             </div>
 
@@ -456,6 +730,9 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
 
             {/* Add bottom padding to ensure content isn't hidden behind sticky elements */}
             <div className="h-24"></div>
+
+            {/* Render new address form if triggered */}
+            {isNewAddress && renderNewAddressForm()}
         </div>
     );
 };
