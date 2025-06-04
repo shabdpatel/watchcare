@@ -277,7 +277,7 @@ const Electronics = () => {
                                     to={`/details/${item.collectionName}/${item.id}`}
                                     key={`${item.collectionName}-${item.id}`}
                                 >
-                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
+                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300 h-full flex flex-col">
                                         <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                                             <button
                                                 onClick={(e) => {
@@ -311,18 +311,18 @@ const Electronics = () => {
                                             />
                                         </div>
 
-                                        <div className="p-4 space-y-1">
+                                        <div className="p-4 space-y-2 flex-1 flex flex-col">
                                             <div className="flex justify-between items-start">
-                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900">
-                                                    {item.Brand}
+                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
+                                                    {item.Company || item.Brand || item.Name}
                                                 </h3>
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-1 flex-shrink-0">
                                                     {renderRating(item.rating || 0)}
                                                 </div>
                                             </div>
                                             <p className="text-gray-600 text-lg font-light">Rs. {item.Price}</p>
-                                            <p className="text-gray-500 text-sm line-clamp-2">{item.Description}</p>
-                                            <div className="flex gap-2 mt-2">
+                                            <p className="text-gray-500 text-sm line-clamp-2 flex-1 min-h-[2.5rem]">{item.Description}</p>
+                                            <div className="flex gap-2 mt-auto pt-2">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();

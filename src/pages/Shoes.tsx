@@ -306,8 +306,9 @@ const Shoes = () => {
                                 <Link
                                     to={`/details/${shoe.collectionName}/${shoe.id}`}
                                     key={`${shoe.collectionName}-${shoe.id}`}
+                                    className="block h-full" // Add this to make Link take full height
                                 >
-                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
+                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300 h-full flex flex-col">
                                         <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                                             <button
                                                 onClick={(e) => {
@@ -341,17 +342,17 @@ const Shoes = () => {
                                             />
                                         </div>
 
-                                        <div className="p-4 space-y-1">
+                                        <div className="p-4 space-y-1 flex-1 flex flex-col">
                                             <div className="flex justify-between items-start">
-                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900">
+                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
                                                     {shoe.Company}
                                                 </h3>
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-1 flex-shrink-0">
                                                     {renderRating(shoe.rating || 0)}
                                                 </div>
                                             </div>
                                             <p className="text-gray-600 text-lg font-light">Rs. {shoe.Price}</p>
-                                            <p className="text-gray-500 text-sm line-clamp-2">{shoe.Description}</p>
+                                            <p className="text-gray-500 text-sm line-clamp-2 flex-grow">{shoe.Description}</p>
                                             <div className="flex gap-2 mt-2">
                                                 <button
                                                     onClick={(e) => {
