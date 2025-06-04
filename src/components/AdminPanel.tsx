@@ -13,6 +13,7 @@ import {
     AreaChart, Area
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { Menu, Transition } from '@headlessui/react';
 
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState('users');
@@ -216,10 +217,30 @@ const AdminPanel = () => {
     const handleUpdateStatus = async (orderId) => {
         try {
             const orderRef = doc(db, 'orders', orderId);
+            // Update status based on current status
+            const order = orders.find(o => o.id === orderId);
+            let newStatus = 'pending';
+
+            switch (order?.status?.toLowerCase()) {
+                case 'pending':
+                    newStatus = 'processing';
+                    break;
+                case 'processing':
+                    newStatus = 'shipped';
+                    break;
+                case 'shipped':
+                    newStatus = 'delivered';
+                    break;
+                case 'delivered':
+                    return; // No further status update needed
+                default:
+                    newStatus = 'pending';
+            }
+
             await updateDoc(orderRef, {
-                status: 'completed'
+                status: newStatus
             });
-            toast.success('Order status updated');
+            toast.success(`Order status updated to ${newStatus}`);
             fetchData();
         } catch (error) {
             console.error('Error updating order status:', error);
@@ -746,17 +767,55 @@ const AdminPanel = () => {
                                                     <td className="px-4 sm:px-6 py-4">
                                                         <div className="space-y-2">
                                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                                ${order.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                                        'bg-red-100 text-red-800'}`}>
+                                                                ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                                                    order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                                                                        order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                                                            order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                                'bg-gray-100 text-gray-800'}`}>
                                                                 {order.status}
                                                             </span>
-                                                            <button
-                                                                onClick={() => handleUpdateStatus(order.id)}
-                                                                className="text-xs text-blue-600 hover:text-blue-800"
-                                                            >
-                                                                Update Status
-                                                            </button>
+                                                            <Menu as="div" className="relative inline-block text-left">
+                                                                <Menu.Button className="text-xs text-blue-600 hover:text-blue-800">
+                                                                    Update Status
+                                                                </Menu.Button>
+                                                                <Transition
+                                                                    enter="transition ease-out duration-100"
+                                                                    enterFrom="transform opacity-0 scale-95"
+                                                                    enterTo="transform opacity-100 scale-100"
+                                                                    leave="transition ease-in duration-75"
+                                                                    leaveFrom="transform opacity-100 scale-100"
+                                                                    leaveTo="transform opacity-0 scale-95"
+                                                                >
+                                                                    <Menu.Items className="absolute left-0 z-10 mt-2 w-40 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                                                        <div className="py-1">
+                                                                            {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
+                                                                                <Menu.Item key={status}>
+                                                                                    {({ active }) => (
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                const orderRef = doc(db, 'orders', order.id);
+                                                                                                updateDoc(orderRef, { status })
+                                                                                                    .then(() => {
+                                                                                                        toast.success(`Order status updated to ${status}`);
+                                                                                                        fetchData();
+                                                                                                    })
+                                                                                                    .catch((error) => {
+                                                                                                        console.error('Error updating status:', error);
+                                                                                                        toast.error('Failed to update status');
+                                                                                                    });
+                                                                                            }}
+                                                                                            className={`${active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                                                                                                } block px-4 py-2 text-xs w-full text-left capitalize`}
+                                                                                        >
+                                                                                            {status}
+                                                                                        </button>
+                                                                                    )}
+                                                                                </Menu.Item>
+                                                                            ))}
+                                                                        </div>
+                                                                    </Menu.Items>
+                                                                </Transition>
+                                                            </Menu>
                                                         </div>
                                                     </td>
                                                 </tr>

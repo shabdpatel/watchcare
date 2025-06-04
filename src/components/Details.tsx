@@ -17,6 +17,30 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import CheckoutFlow from './CheckoutFlow';
 
+// Define interfaces
+interface ProductData {
+    id: string;
+    Company: string;
+    Model: string;
+    Price: number;
+    SKU: string;
+    Description: string;
+    Features?: string[];
+    Image?: string;
+    images?: string[];
+    rating?: number;
+    [key: string]: any; // For dynamic specification fields
+}
+
+interface ShippingAddress {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+}
+
 // Define specifications for each product type
 const productSpecs = {
     Watches: {
@@ -179,17 +203,18 @@ const productSpecs = {
 };
 
 const Detail = () => {
-    const { collectionName, id } = useParams();
-    const [watch, setWatch] = useState(null);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [wishlist, setWishlist] = useState([]);
-    const [relatedWatches, setRelatedWatches] = useState([]);
-    const [similarProducts, setSimilarProducts] = useState([]);
-    const { addToCart } = useCart(); // Add this hook
+    const { collectionName = '', id = '' } = useParams<{ collectionName: string; id: string }>();
+    const [watch, setWatch] = useState<ProductData | null>(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+    const [wishlist, setWishlist] = useState<string[]>([]);
+    const [relatedWatches, setRelatedWatches] = useState<ProductData[]>([]);
+    const [similarProducts, setSimilarProducts] = useState<ProductData[]>([]);
+    const { addToCart } = useCart();
     const { currentUser } = useAuth();
     const navigate = useNavigate();
-    const [showAddressModal, setShowAddressModal] = useState(false);
-    const [shippingAddress, setShippingAddress] = useState({
+    const [showAddressModal, setShowAddressModal] = useState<boolean>(false);
+    const [showCheckoutModal, setShowCheckoutModal] = useState<boolean>(false);
+    const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
         name: '',
         address: '',
         city: '',
@@ -197,7 +222,6 @@ const Detail = () => {
         pincode: '',
         phone: ''
     });
-    const [showCheckoutModal, setShowCheckoutModal] = useState(false); // Add state for checkout modal
 
     useEffect(() => {
         const fetchWatch = async () => {
@@ -205,7 +229,7 @@ const Detail = () => {
                 const docRef = doc(db, collectionName, id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    setWatch({ id: docSnap.id, ...docSnap.data() });
+                    setWatch({ id: docSnap.id, ...docSnap.data() } as ProductData);
                 }
             } catch (error) {
                 console.error("Error fetching watch:", error);
@@ -227,7 +251,7 @@ const Detail = () => {
                 const watches = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
-                }));
+                } as ProductData));
                 setRelatedWatches(watches);
             } catch (error) {
                 console.error("Error fetching related watches:", error);
@@ -259,7 +283,7 @@ const Detail = () => {
                 const products = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
-                }));
+                } as ProductData));
                 setSimilarProducts(products);
             } catch (error) {
                 console.error("Error fetching similar products:", error);
@@ -270,7 +294,7 @@ const Detail = () => {
     }, [watch, collectionName, id]);
 
 
-    const toggleWishlist = (watchId) => {
+    const toggleWishlist = (watchId: string) => {
         setWishlist(prev =>
             prev.includes(watchId)
                 ? prev.filter(id => id !== watchId)
@@ -278,24 +302,30 @@ const Detail = () => {
         );
     };
 
-    const handleAddToCart = (item) => {
+    // Fix type for handleAddToCart
+    const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>, item: ProductData) => {
+        e.preventDefault();
         addToCart({
             id: item.id,
             name: item.Company,
-            price: parseFloat(item.Price),
-            image: item.Image || item.images?.[0],
-            quantity: 1
+            price: item.Price,
+            image: item.Image || item.images?.[0] || '',
+            quantity: 1,
+            category: collectionName
         });
     };
 
-    const renderRating = (rating) => {
-        return [...Array(5)].map((_, i) => (
-            <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`}>&#9733;</span>
-        ));
-    };
+    // Fix buttons accessibility
+    const renderRating = (rating: number): JSX.Element[] => (
+        [...Array(5)].map((_, i) => (
+            <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`} role="img" aria-label={`${i < rating ? 'filled' : 'empty'} star`}>
+                ★
+            </span>
+        ))
+    );
 
-    const renderSpecifications = (product, category) => {
-        const specs = productSpecs[category];
+    const renderSpecifications = (product: ProductData, category: string): JSX.Element | null => {
+        const specs = productSpecs[category as keyof typeof productSpecs];
         if (!specs) return null;
 
         return (
@@ -321,13 +351,10 @@ const Detail = () => {
         );
     };
 
-    // Add this helper function for truncating description
-    const truncateText = (text, maxLength) => {
-        if (!text) return '';
-        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-    };
+    // Remove unused truncateText function
 
-    const handleBuyNow = async (product) => {
+    const handleBuyNow = async (product: ProductData | null) => {
+        if (!product) return;
         if (!currentUser) {
             toast.error('Please login to continue');
             navigate('/login');
@@ -434,6 +461,8 @@ const Detail = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                         <input
                             type="text"
+                            placeholder="Full Name"
+                            title="Full Name"
                             value={shippingAddress.name}
                             onChange={(e) => setShippingAddress({ ...shippingAddress, name: e.target.value })}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
@@ -444,6 +473,8 @@ const Detail = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                         <input
                             type="text"
+                            placeholder="Address"
+                            title="Address"
                             value={shippingAddress.address}
                             onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
@@ -455,6 +486,8 @@ const Detail = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                             <input
                                 type="text"
+                                placeholder="City"
+                                title="City"
                                 value={shippingAddress.city}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
@@ -465,6 +498,8 @@ const Detail = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                             <input
                                 type="text"
+                                placeholder="State"
+                                title="State"
                                 value={shippingAddress.state}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
@@ -477,6 +512,8 @@ const Detail = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
                             <input
                                 type="text"
+                                placeholder="Pincode"
+                                title="Pincode"
                                 value={shippingAddress.pincode}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, pincode: e.target.value })}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
@@ -487,6 +524,8 @@ const Detail = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                             <input
                                 type="tel"
+                                placeholder="Phone"
+                                title="Phone"
                                 value={shippingAddress.phone}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
@@ -609,7 +648,12 @@ const Detail = () => {
                                     </button>
 
                                     <button
-                                        onClick={() => toggleWishlist(watch?.id)}
+                                        aria-label="Toggle wishlist"
+                                        title="Toggle wishlist"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            toggleWishlist(watch?.id);
+                                        }}
                                         className={`flex items-center gap-2 px-6 py-3 rounded-lg border transition-colors
                                             ${wishlist.includes(watch?.id)
                                                 ? 'bg-rose-50 border-rose-200 text-rose-600'

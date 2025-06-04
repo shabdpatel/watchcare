@@ -6,7 +6,8 @@ import {
     setDoc,
     updateDoc,
     increment,
-    arrayUnion
+    arrayUnion,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from '../pages/firebase';
 import { useAuth } from './AuthContext';
@@ -23,8 +24,24 @@ import {
     XMarkIcon
 } from '@heroicons/react/24/outline';
 
+interface ProductData {
+    id: string;
+    Company: string;
+    Model: string;
+    Price: number;
+    Image?: string;
+    images?: string[];
+    category?: string;
+    Description?: string;
+    Seller?: {
+        Name?: string;
+        Email?: string;
+        Phone?: string;
+    };
+}
+
 interface CheckoutFlowProps {
-    product: any;
+    product: ProductData;
     onClose: () => void;
 }
 
@@ -41,11 +58,29 @@ interface Address {
     phone: string;
 }
 
+// Add this helper function after the interfaces and before the component
+const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+        if (window.Razorpay) {
+            resolve(true);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => {
+            script.remove();
+            resolve(false);
+        };
+        document.body.appendChild(script);
+    });
+};
+
 const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
     const [step, setStep] = useState(1);
-    // Initialize as an empty array
-    const [addresses, setAddresses] = useState<any[]>([]);
-    const [selectedAddress, setSelectedAddress] = useState(null);
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
     const [isNewAddress, setIsNewAddress] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('');
     const [newAddress, setNewAddress] = useState<Address>({
@@ -99,7 +134,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
         fetchAddresses();
     }, [currentUser]);
 
-    const handlePayment = async (method) => {
+    const handlePayment = async (method: string) => {
         try {
             if (!currentUser) {
                 toast.error('Please login to continue');
@@ -116,24 +151,32 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                 await createOrder('cod', null);
                 navigate('/order-success');
             } else {
+                // Load Razorpay script
+                const isLoaded = await loadRazorpayScript();
+                if (!isLoaded) {
+                    throw new Error('Failed to load payment gateway');
+                }
+
                 const options = {
-                    key: 'rzp_live_UTHrYljhpKfSae', // Consider moving this to environment variables
-                    amount: orderSummary.total * 100, // Amount in paise
+                    key: 'rzp_live_UTHrYljhpKfSae',
+                    amount: orderSummary.total * 100,
                     currency: 'INR',
                     name: 'Watch Store',
-                    description: `Purchase of ${product.Company || ''} ${product.Model || ''}`.trim(),
-                    image: product.Image || product.images?.[0],
-                    handler: async (response) => {
+                    description: `Purchase of ${product.Company || 'Watch'} ${product.Model || ''}`.trim(),
+                    image: product.Image || product.images?.[0] || '',
+                    handler: async (response: any) => {
                         try {
                             if (response.razorpay_payment_id) {
-                                await createOrder('online', response.razorpay_payment_id);
-                                navigate('/order-success');
+                                const orderCreated = await createOrder('online', response.razorpay_payment_id);
+                                if (orderCreated) {
+                                    navigate('/order-success');
+                                }
                             } else {
-                                throw new Error('Payment failed');
+                                throw new Error('Payment verification failed');
                             }
                         } catch (error) {
                             console.error('Payment processing error:', error);
-                            toast.error('Failed to process payment');
+                            toast.error('Failed to process payment. Please contact support.');
                         }
                     },
                     prefill: {
@@ -144,16 +187,16 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                     theme: { color: '#E11D48' }
                 };
 
-                const razorpayInstance = new window.Razorpay(options);
-                razorpayInstance.open();
+                const razorpay = new (window as any).Razorpay(options);
+                razorpay.open();
             }
         } catch (error) {
             console.error('Payment error:', error);
-            toast.error('Payment failed. Please try again.');
+            toast.error(error instanceof Error ? error.message : 'Payment failed. Please try again.');
         }
     };
 
-    const createOrder = async (paymentMethod, paymentId) => {
+    const createOrder = async (paymentMethod: string, paymentId: string | null) => {
         try {
             if (!currentUser?.email) {
                 throw new Error('User not authenticated');
@@ -163,86 +206,71 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                 throw new Error('No shipping address selected');
             }
 
-            if (!product?.id) {
-                throw new Error('Invalid product information');
+            if (!product) {
+                throw new Error('Product information is missing');
             }
 
-            // Add validation for required product fields
-            if (!product.Company || !product.Model || !product.Price) {
-                throw new Error('Invalid product details');
-            }
+            // Generate a consistent order ID
+            const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-            const productDoc = await getDoc(doc(db, product.category || 'Watches', product.id));
-            const productData = productDoc.data();
-            const sellerInfo = productData?.Seller;
-
-            const orderId = paymentId || `order_${Date.now()}`;
+            // Create order data with exact field matching
             const orderData = {
-                // Basic order info
                 id: orderId,
-                userId: currentUser.email,
+                userId: currentUser.email.toLowerCase(), // Ensure consistent email casing
                 productId: product.id,
                 amount: orderSummary.total,
                 status: paymentMethod === 'cod' ? 'pending' : 'paid',
                 orderDate: new Date(),
                 expectedDelivery: deliveryDate,
-                paymentMethod: paymentMethod,
+                paymentMethod,
                 paymentId: paymentId || null,
                 shippingAddress: selectedAddress,
-
-                // Product details with null checks
                 product: {
                     id: product.id,
-                    category: product.category || 'Watches',
                     Company: product.Company || '',
                     Model: product.Model || '',
                     Price: product.Price || 0,
                     Image: product.Image || product.images?.[0] || '',
-                    Description: product.Description || '',
+                    Description: product.Description || ''
                 },
-
-                // Payment details
-                payment: {
-                    method: paymentMethod,
-                    status: paymentMethod === 'cod' ? 'pending' : 'completed',
-                    amount: orderSummary.total,
-                    transactionId: paymentId || null,
-                },
-
-                // Seller information if available
-                seller: sellerInfo ? {
-                    name: sellerInfo.Name || '',
-                    email: sellerInfo.Email || '',
-                    phone: sellerInfo.Phone || '',
-                } : null,
-
-                // Metadata
-                createdAt: new Date(),
-                updatedAt: new Date()
+                seller: product.Seller ? {
+                    name: product.Seller.Name || '',
+                    email: product.Seller.Email || '',
+                    phone: product.Seller.Phone || '',
+                } : null
             };
 
-            // Save order in Firestore
-            await setDoc(doc(db, 'orders', orderId), orderData);
+            // Create batch for atomic operations
+            const batch = writeBatch(db);
 
-            // Update product stock
-            const productRef = doc(db, product.category || 'Watches', product.id);
-            await updateDoc(productRef, {
-                Stock_Number: increment(-1)
-            });
+            // Add order document with explicit ID
+            const orderRef = doc(db, 'orders', orderId);
+            batch.set(orderRef, orderData);
 
             // Update user's orders array
-            const userRef = doc(db, 'users', currentUser.email);
-            await updateDoc(userRef, {
+            const userRef = doc(db, 'users', currentUser.email.toLowerCase());
+            batch.update(userRef, {
                 orders: arrayUnion(orderId)
             });
 
+            // Update product stock if category exists
+            if (product.category) {
+                const productRef = doc(db, product.category, product.id);
+                batch.update(productRef, {
+                    Stock_Number: increment(-1)
+                });
+            }
+
+            // Commit the batch
+            await batch.commit();
+            console.log('Order created successfully:', orderId); // Debug log
             toast.success('Order placed successfully!');
-            navigate('/order-success');
+            return true;
 
         } catch (error) {
             console.error('Error creating order:', error);
-            toast.error(error.message || 'Failed to create order');
-            throw error;
+            toast.error('Failed to create order. Please try again.');
+            return false;
         }
     };
 
@@ -508,7 +536,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
 
     // Add new address form component
     const renderNewAddressForm = () => (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50" role="dialog" aria-modal="true">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">Add New Address</h3>
@@ -516,7 +544,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                         <XMarkIcon className="w-5 h-5" />
                     </button>
                 </div>
-                <form onSubmit={(e) => {
+                <form onSubmit={(e: React.FormEvent) => {
                     e.preventDefault();
                     handleAddAddress();
                 }} className="space-y-4">
@@ -524,6 +552,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                         <label className="block text-sm font-medium text-gray-700">Full Name</label>
                         <input
                             type="text"
+                            aria-label="Full Name"
+                            placeholder="Full Name"
                             required
                             value={newAddress.name}
                             onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
@@ -534,6 +564,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                         <label className="block text-sm font-medium text-gray-700">Address</label>
                         <input
                             type="text"
+                            aria-label="Address"
+                            placeholder="Address"
                             required
                             value={newAddress.address}
                             onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
@@ -545,6 +577,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                             <label className="block text-sm font-medium text-gray-700">City</label>
                             <input
                                 type="text"
+                                aria-label="City"
+                                placeholder="City"
                                 required
                                 value={newAddress.city}
                                 onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
@@ -555,6 +589,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                             <label className="block text-sm font-medium text-gray-700">State</label>
                             <input
                                 type="text"
+                                aria-label="State"
+                                placeholder="State"
                                 required
                                 value={newAddress.state}
                                 onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
@@ -567,6 +603,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                             <label className="block text-sm font-medium text-gray-700">PIN Code</label>
                             <input
                                 type="text"
+                                aria-label="PIN Code"
+                                placeholder="PIN Code"
                                 required
                                 value={newAddress.pincode}
                                 onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
@@ -577,6 +615,8 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                             <label className="block text-sm font-medium text-gray-700">Phone</label>
                             <input
                                 type="tel"
+                                aria-label="Phone"
+                                placeholder="Phone"
                                 required
                                 value={newAddress.phone}
                                 onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
