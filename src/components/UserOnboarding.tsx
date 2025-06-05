@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../pages/firebase';
 import { useAuth } from './AuthContext';
+import { toast } from 'react-toastify';
 
 const UserOnboarding = () => {
     const { currentUser } = useAuth();
@@ -88,24 +89,33 @@ const UserOnboarding = () => {
         setError('');
 
         try {
+            if (!currentUser?.email) {
+                throw new Error('No authenticated user found');
+            }
+
             // Create user data object with all form data
             const userData = {
                 ...formData,
                 userId: currentUser.uid,
-                email: currentUser.email,
-                updatedAt: new Date(),
+                email: currentUser.email.toLowerCase(), // Ensure email is lowercase
+                updatedAt: new Date().toISOString(),
                 onboardingCompleted: true,
-                createdAt: new Date()
+                createdAt: new Date().toISOString()
             };
 
-            // Save to Firestore using email as document ID
-            await setDoc(doc(db, 'users', currentUser.email), userData);
+            // Save to Firestore
+            const userRef = doc(db, 'users', currentUser.email.toLowerCase());
+            await setDoc(userRef, userData, { merge: true }); // Add merge option
 
-            // Show success message using toast
+            // Show success message
             toast.success('Profile completed successfully!');
 
-            // Navigate to profile page
-            navigate('/profile', { replace: true });
+            // Add a small delay before navigation
+            setTimeout(() => {
+                // Force a page reload instead of using navigate
+                window.location.href = '/profile';
+            }, 1000);
+
         } catch (err) {
             console.error('Error saving profile:', err);
             setError('Failed to save profile information. Please try again.');
