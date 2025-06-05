@@ -112,8 +112,20 @@ const AdminPanel = () => {
             ]);
 
             let totalRevenue = 0;
+            const monthlyRevenue = {};
+            const categoryStats = {};
+            const sellerStats = {};
+            const topProductsList = [];
+
             ordersSnap.docs.forEach(doc => {
-                totalRevenue += doc.data().total || 0;
+                const order = doc.data();
+                // Add null check for order.createdAt
+                if (order.createdAt && typeof order.createdAt.toDate === 'function') {
+                    const date = order.createdAt.toDate();
+                    const month = date.toLocaleString('default', { month: 'short' });
+                    monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (order.total || 0);
+                }
+                totalRevenue += order.total || 0;
             });
 
             setStats({
@@ -125,18 +137,8 @@ const AdminPanel = () => {
             });
 
             // Calculate analytics
-            const monthlyRevenue = {};
-            const categoryStats = {};
-            const sellerStats = {};
-            const topProductsList = [];
-
-            // Process orders for revenue and trends
             ordersSnap.docs.forEach(doc => {
                 const order = doc.data();
-                const date = new Date(order.createdAt.toDate());
-                const month = date.toLocaleString('default', { month: 'short' });
-
-                monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (order.total || 0);
 
                 // Track products sold
                 order.items?.forEach(item => {
@@ -247,6 +249,309 @@ const AdminPanel = () => {
             toast.error('Failed to update order status');
         }
     };
+
+    // Add new state variables for search and filters
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState({
+        products: {
+            category: 'all',
+            priceRange: 'all',
+            stock: 'all'
+        },
+        orders: {
+            status: 'all',
+            dateRange: 'all'
+        },
+        users: {
+            type: 'all',
+            status: 'all'
+        }
+    });
+
+    // Filter functions
+    const filterProducts = (products) => {
+        return products.filter(product => {
+            const matchesSearch = (
+                (product.name || product.Brand || product.Company || '')
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                product.Description?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            const matchesCategory = filters.products.category === 'all' ||
+                product.collection === filters.products.category;
+
+            const matchesStock = filters.products.stock === 'all' || (
+                filters.products.stock === 'inStock' ? (product.Stock > 0) :
+                    filters.products.stock === 'lowStock' ? (product.Stock <= 10 && product.Stock > 0) :
+                        product.Stock === 0
+            );
+
+            const matchesPriceRange = filters.products.priceRange === 'all' || (
+                filters.products.priceRange === 'under1000' ? product.Price < 1000 :
+                    filters.products.priceRange === '1000to5000' ? (product.Price >= 1000 && product.Price <= 5000) :
+                        product.Price > 5000
+            );
+
+            return matchesSearch && matchesCategory && matchesStock && matchesPriceRange;
+        });
+    };
+
+    const filterOrders = (orders) => {
+        return orders.filter(order => {
+            const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.shippingAddress?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+            const matchesStatus = filters.orders.status === 'all' ||
+                order.status === filters.orders.status;
+
+            const matchesDate = filters.orders.dateRange === 'all' || (
+                filters.orders.dateRange === 'today' ?
+                    isToday(order.orderDate?.toDate()) :
+                    filters.orders.dateRange === 'week' ?
+                        isThisWeek(order.orderDate?.toDate()) :
+                        isThisMonth(order.orderDate?.toDate())
+            );
+
+            return matchesSearch && matchesStatus && matchesDate;
+        });
+    };
+
+    const filterUsers = (users) => {
+        return users.filter(user => {
+            const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.personalInfo?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.personalInfo?.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+            const matchesType = filters.users.type === 'all' || (
+                filters.users.type === 'seller' ? user.isSeller :
+                    filters.users.type === 'customer' ? !user.isSeller : true
+            );
+
+            const matchesStatus = filters.users.status === 'all' ||
+                String(user.isActive) === filters.users.status;
+
+            return matchesSearch && matchesType && matchesStatus;
+        });
+    };
+
+    // Helper functions for date filtering
+    const isToday = (date) => {
+        if (!date) return false;
+        const today = new Date();
+        return date.toDateString() === today.toDateString();
+    };
+
+    const isThisWeek = (date) => {
+        if (!date) return false;
+        const today = new Date();
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return date >= weekAgo;
+    };
+
+    const isThisMonth = (date) => {
+        if (!date) return false;
+        const today = new Date();
+        return date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
+    };
+
+    // Add search and filter UI components right after the tab navigation
+    const renderSearchAndFilters = () => (
+        <div className="mb-6">
+            {/* Search and Filter Container */}
+            <div className="bg-white rounded-lg shadow-sm p-4">
+                {/* Search Bar */}
+                <div className="relative mb-4">
+                    <input
+                        type="text"
+                        placeholder={`Search ${activeTab}...`}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                    />
+                    <svg
+                        className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg
+                                className="h-5 w-5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
+
+                {/* Filters Section */}
+                <div className="flex flex-wrap gap-3">
+                    {activeTab === 'products' && (
+                        <>
+                            <select
+                                value={filters.products.category}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    products: { ...prev.products, category: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Categories</option>
+                                <option value="Watches">Watches</option>
+                                <option value="Fashion">Fashion</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Accessories">Accessories</option>
+                            </select>
+
+                            <select
+                                value={filters.products.stock}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    products: { ...prev.products, stock: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Stock</option>
+                                <option value="inStock">In Stock</option>
+                                <option value="lowStock">Low Stock</option>
+                                <option value="outOfStock">Out of Stock</option>
+                            </select>
+
+                            <select
+                                value={filters.products.priceRange}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    products: { ...prev.products, priceRange: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Prices</option>
+                                <option value="under1000">Under ₹1000</option>
+                                <option value="1000to5000">₹1000 - ₹5000</option>
+                                <option value="over5000">Over ₹5000</option>
+                            </select>
+                        </>
+                    )}
+
+                    {activeTab === 'orders' && (
+                        <>
+                            <select
+                                value={filters.orders.status}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    orders: { ...prev.orders, status: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+
+                            <select
+                                value={filters.orders.dateRange}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    orders: { ...prev.orders, dateRange: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </>
+                    )}
+
+                    {activeTab === 'users' && (
+                        <>
+                            <select
+                                value={filters.users.type}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    users: { ...prev.users, type: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Users</option>
+                                <option value="customer">Customers</option>
+                                <option value="seller">Sellers</option>
+                            </select>
+
+                            <select
+                                value={filters.users.status}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    users: { ...prev.users, status: e.target.value }
+                                }))}
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
+                            >
+                                <option value="all">All Status</option>
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </>
+                    )}
+                </div>
+
+                {/* Active Filters Display */}
+                {(searchTerm || Object.values(filters[activeTab]).some(value => value !== 'all')) && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <span className="text-sm text-gray-500">Active filters:</span>
+                        {searchTerm && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                                Search: {searchTerm}
+                                <button
+                                    onClick={() => setSearchTerm('')}
+                                    className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        )}
+                        {Object.entries(filters[activeTab]).map(([key, value]) => (
+                            value !== 'all' && (
+                                <span key={key} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
+                                    {key}: {value}
+                                    <button
+                                        onClick={() => setFilters(prev => ({
+                                            ...prev,
+                                            [activeTab]: { ...prev[activeTab], [key]: 'all' }
+                                        }))}
+                                        className="ml-2 text-gray-600 hover:text-gray-800"
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            )
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
     const renderDashboard = () => (
         // Update grid classes for better responsiveness
@@ -499,6 +804,7 @@ const AdminPanel = () => {
                             {/* Products Section */}
                             {activeTab === 'products' && (
                                 <div className="overflow-x-auto">
+                                    {renderSearchAndFilters()}
                                     <div className="inline-block min-w-full">
                                         <table className="min-w-full divide-y divide-gray-300">
                                             <thead className="bg-gray-50">
@@ -529,7 +835,7 @@ const AdminPanel = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {products.map(product => (
+                                                {filterProducts(products).map(product => (
                                                     <tr
                                                         key={product.id}
                                                         className="hover:bg-gray-50 cursor-pointer transition-all duration-200"
@@ -661,6 +967,7 @@ const AdminPanel = () => {
                             {/* Orders Section */}
                             {activeTab === 'orders' && (
                                 <div className="overflow-x-auto">
+                                    {renderSearchAndFilters()}
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
@@ -682,7 +989,7 @@ const AdminPanel = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {orders.map(order => (
+                                            {filterOrders(orders).map(order => (
                                                 <tr key={order.id} className="hover:bg-gray-50">
                                                     <td className="px-4 sm:px-6 py-4">
                                                         <div className="space-y-1">
@@ -828,6 +1135,7 @@ const AdminPanel = () => {
                             {/* Users Section */}
                             {activeTab === 'users' && (
                                 <div className="overflow-x-auto">
+                                    {renderSearchAndFilters()}
                                     <table className="min-w-full divide-y divide-gray-300">
                                         <thead className="bg-gray-50">
                                             <tr>
@@ -855,7 +1163,7 @@ const AdminPanel = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 bg-white">
-                                            {users.map(user => (
+                                            {filterUsers(users).map(user => (
                                                 <tr key={user.id} className="hover:bg-gray-50">
                                                     <td className="px-4 sm:px-6 py-4">
                                                         <div className="flex items-start sm:items-center gap-3">
@@ -964,7 +1272,9 @@ const AdminPanel = () => {
                                                                 {user.isActive ? 'Active' : 'Inactive'}
                                                             </span>
                                                             <span className="text-xs text-gray-500">
-                                                                Joined: {user.createdAt?.toDate().toLocaleDateString()}
+                                                                Joined: {user.createdAt && typeof user.createdAt.toDate === 'function'
+                                                                    ? user.createdAt.toDate().toLocaleDateString()
+                                                                    : 'N/A'}
                                                             </span>
                                                         </div>
                                                     </td>

@@ -4,9 +4,8 @@ import { db } from "./firebase";
 import Form from "./form";
 import { Link } from "react-router-dom";
 import FiltersSidebar from "../components/FiltersSidebar";
+import ProductCard from "../components/ProductCard";
 import {
-    HeartIcon,
-    ShoppingBagIcon,
     XMarkIcon,
     FunnelIcon,
     ArrowsUpDownIcon
@@ -452,70 +451,13 @@ const AllWatches = () => {
                         <BreadcrumbAndSort />
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             {filteredWatches.map((watch) => (
-
-                                <Link
-                                    to={`/details/${watch.collectionName}/${watch.id}`}
+                                <ProductCard
                                     key={`${watch.collectionName}-${watch.id}`}
-                                >
-                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
-                                        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    toggleWishlist(watch.id);
-                                                }}
-                                                className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
-                                            >
-                                                {wishlist.includes(watch.id) ? (
-                                                    <HeartSolidIcon className="w-5 h-5 text-red-500" />
-                                                ) : (
-                                                    <HeartIcon className="w-5 h-5 text-gray-800" />
-                                                )}
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    handleAddToCart(e, watch);
-                                                }}
-                                                className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
-                                            >
-                                                <ShoppingBagIcon className="w-5 h-5 text-gray-800" />
-                                            </button>
-                                        </div>
-
-                                        <div className="aspect-square overflow-hidden relative">
-                                            <img
-                                                src={watch.Image || watch.images?.[0]}
-                                                alt={watch.Company}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            />
-                                        </div>
-
-                                        <div className="p-4 space-y-1">
-                                            <div className="flex justify-between items-start">
-                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
-                                                    {watch.Company}
-                                                </h3>
-                                                <div className="flex items-center gap-1">
-                                                    {renderRating(watch.rating || 0)}
-                                                </div>
-                                            </div>
-                                            <p className="text-gray-600 text-lg font-light">Rs. {watch.Price}</p>
-                                            <p className="text-gray-500 text-sm line-clamp-2">{watch.Description}</p>
-                                            <div className="flex gap-2 mt-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleAddToCart(e, watch);
-                                                    }}
-                                                    className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
-                                                >
-                                                    Buy Now
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
+                                    item={watch}
+                                    isWishlisted={wishlist.includes(watch.id)}
+                                    onToggleWishlist={toggleWishlist}
+                                    onAddToCart={handleAddToCart}
+                                />
                             ))}
                         </div>
                         {filteredWatches.length === 0 && (

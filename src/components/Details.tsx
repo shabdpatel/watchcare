@@ -639,7 +639,7 @@ const Detail = () => {
                                     </button>
 
                                     <button
-                                        onClick={() => handleAddToCart(watch)}
+                                        onClick={(e) => handleAddToCart(e, watch)}
                                         className="flex-1 min-w-[200px] py-3 px-6 bg-rose-600 hover:bg-rose-700 
                                             text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                     >

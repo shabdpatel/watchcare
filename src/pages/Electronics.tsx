@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import { useCart } from '../context/CartContext';
+import ProductCard from "../components/ProductCard";
 
 export const electronicsFilters = {
     types: ['Mobile', 'Headphones', 'Chargers', 'Accessories'],
@@ -273,74 +274,18 @@ const Electronics = () => {
                         <BreadcrumbAndSort />
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             {filteredFashion.map((item) => (
-                                <Link
-                                    to={`/details/${item.collectionName}/${item.id}`}
+                                <ProductCard
                                     key={`${item.collectionName}-${item.id}`}
-                                >
-                                    <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300 h-full flex flex-col">
-                                        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    toggleWishlist(item.id);
-                                                }}
-                                                className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
-                                            >
-                                                {wishlist.includes(item.id) ? (
-                                                    <HeartSolidIcon className="w-5 h-5 text-red-500" />
-                                                ) : (
-                                                    <HeartIcon className="w-5 h-5 text-gray-800" />
-                                                )}
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    handleAddToCart(e, item);
-                                                }}
-                                                className="p-2 rounded-full bg-gray-100/50 hover:bg-gray-200/70 backdrop-blur-sm"
-                                            >
-                                                <ShoppingBagIcon className="w-5 h-5 text-gray-800" />
-                                            </button>
-                                        </div>
-
-                                        <div className="aspect-square overflow-hidden relative">
-                                            <img
-                                                src={item.Image || item.images?.[0]}
-                                                alt={item.Brand}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            />
-                                        </div>
-
-                                        <div className="p-4 space-y-2 flex-1 flex flex-col">
-                                            <div className="flex justify-between items-start">
-                                                <h3 className="text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
-                                                    {item.Company || item.Brand || item.Name}
-                                                </h3>
-                                                <div className="flex items-center gap-1 flex-shrink-0">
-                                                    {renderRating(item.rating || 0)}
-                                                </div>
-                                            </div>
-                                            <p className="text-gray-600 text-lg font-light">Rs. {item.Price}</p>
-                                            <p className="text-gray-500 text-sm line-clamp-2 flex-1 min-h-[2.5rem]">{item.Description}</p>
-                                            <div className="flex gap-2 mt-auto pt-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleAddToCart(e, item);
-                                                    }}
-                                                    className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
-                                                >
-                                                    Buy Now
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
+                                    item={item}
+                                    isWishlisted={wishlist.includes(item.id)}
+                                    onToggleWishlist={toggleWishlist}
+                                    onAddToCart={handleAddToCart}
+                                />
                             ))}
                         </div>
                         {filteredFashion.length === 0 && (
                             <div className="col-span-full text-center py-12 flex flex-col items-center justify-center">
-                                <h3 className="text-lg font-medium text-gray-700">No fashion items match your filters</h3>
+                                <h3 className="text-lg font-medium text-gray-700">No electronics items match your filters</h3>
                                 <p className="text-gray-500 mt-2">Try adjusting your filter criteria</p>
                             </div>
                         )}
