@@ -47,13 +47,22 @@ const productSpecs = {
         technical: [
             { label: 'Watch Glass/Crystal', key: 'Glass' },
             { label: 'Movement', key: 'Movement' },
-            { label: 'Warranty', key: 'Warranty' },
             { label: 'Water Resistance', key: 'WaterResistance' },
             { label: 'Hand Type', key: 'HandType' },
             { label: 'Style', key: 'Style' },
             { label: 'Occasion', key: 'Occasion' },
             { label: 'Band Style', key: 'BandStyle' },
             { label: 'Case Material', key: 'CaseMaterial' }
+        ],
+        warranty: [  // Add this new section
+            { label: 'Warranty Duration', key: 'Warranty.Duration' },
+            { label: 'Warranty Expiry', key: 'Warranty.Expiry' },
+            { label: 'Warranty Provider', key: 'Warranty.Provider' },
+            { label: 'Warranty Type', key: 'Warranty.Type' },
+            { label: 'Warranty Status', key: 'Warranty.Status' },
+            { label: 'Extended Warranty', key: 'Warranty.ExtendedWarranty.Available' },
+            { label: 'Extended Duration', key: 'Warranty.ExtendedWarranty.Duration' },
+            { label: 'Registration Required', key: 'Warranty.Registration.Required' }
         ],
         brand: [
             { label: 'Brand', key: 'Brand' },
@@ -324,9 +333,14 @@ const Detail = () => {
         ))
     );
 
+    // Update the renderSpecifications function to handle nested properties
     const renderSpecifications = (product: ProductData, category: string): JSX.Element | null => {
         const specs = productSpecs[category as keyof typeof productSpecs];
         if (!specs) return null;
+
+        const getNestedValue = (obj: any, path: string) => {
+            return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+        };
 
         return (
             <div className="space-y-8 pt-8">
@@ -336,22 +350,26 @@ const Detail = () => {
                     <div key={sectionName} className="space-y-4">
                         <h3 className="text-xl font-semibold uppercase">{sectionName}</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            {fields.map(({ label, key }) => (
-                                product[key] && (
-                                    <div key={key}>
-                                        <p className="text-sm text-gray-500">{label}</p>
-                                        <p className="font-medium">{product[key]}</p>
-                                    </div>
-                                )
-                            ))}
+                            {fields.map(({ label, key }) => {
+                                const value = getNestedValue(product, key);
+                                if (value !== undefined && value !== null && value !== '') {
+                                    return (
+                                        <div key={key}>
+                                            <p className="text-sm text-gray-500">{label}</p>
+                                            <p className="font-medium">
+                                                {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
+                                            </p>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })}
                         </div>
                     </div>
                 ))}
             </div>
         );
     };
-
-    // Remove unused truncateText function
 
     const handleBuyNow = async (product: ProductData | null) => {
         if (!product) return;

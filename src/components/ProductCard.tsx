@@ -14,6 +14,11 @@ interface ProductCardProps {
         Price: number;
         Description?: string;
         rating?: number;
+        Warranty?: {
+            Duration?: string;
+            Type?: string;
+            Status?: string;
+        };
     };
     isWishlisted: boolean;
     onToggleWishlist: (id: string) => void;
@@ -33,6 +38,18 @@ const ProductCard = ({ item, isWishlisted, onToggleWishlist, onAddToCart }: Prod
             className="block h-full"
         >
             <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300 h-full flex flex-col">
+                {/* Simplified warranty badge */}
+                {item.Warranty && item.Warranty.Status === 'Active' && (
+                    <div className="absolute top-2 left-2 z-10">
+                        <div className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Warranty
+                        </div>
+                    </div>
+                )}
+
                 <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                     <button
                         onClick={(e) => {

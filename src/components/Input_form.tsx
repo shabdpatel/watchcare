@@ -179,7 +179,7 @@ const InputForm = () => {
                 Seller: {
                     Name: formData.sellerName,
                     Phone: formData.sellerPhone,
-                    Email: currentUser.email, // Use the logged-in user's email
+                    Email: currentUser.email,
                     Address: formData.sellerAddress,
                     City: formData.sellerCity,
                     State: formData.sellerState,
@@ -188,12 +188,12 @@ const InputForm = () => {
                     PAN: formData.sellerPAN
                 },
 
-                // Add warranty information
+                // Update warranty information structure
                 Warranty: {
-                    Duration: formData.warrantyDuration,
+                    Duration: formData.warranty || formData.warrantyDuration, // Use either the simple warranty or detailed duration
                     Expiry: formData.warrantyExpiry,
                     PhotoUrl: formData.warrantyPhotoUrl,
-                    Provider: formData.warrantyProvider,
+                    Provider: formData.warrantyProvider || formData.manufacturedBy, // Default to manufacturer if not specified
                     Type: formData.warrantyType,
                     Terms: formData.warrantyTerms,
                     Status: formData.warrantyStatus,
@@ -231,20 +231,10 @@ const InputForm = () => {
                         SecondaryStrapColor: formData.secondaryStrapColor,
                         StrapMaterial: formData.strapMaterial,
                         StrapWidth: `${formData.strapWidth} MM`,
-                        Warranty: formData.warranty,
                         WaterResistance: formData.waterResistance,
                         CaseMaterial: formData.caseMaterial,
                         Collection: formData.collection,
-                        CollectionYear: formData.collectionYear,
-                        CountryOfOrigin: formData.countryOfOrigin,
-                        GlobalIdentifierType: formData.globalIdentifierType || 'NA', // Add default value here
-                        GlobalIdentifierValue: formData.globalIdentifierValue,
-                        HandType: formData.handType,
-                        ManufacturedBy: formData.manufacturedBy,
-                        ImportedBy: formData.importedBy,
-                        Featured: formData.featured,
-                        Stock: formData.stock,
-                        Stock_Number: formData.stockNumber
+                        GlobalIdentifierType: formData.globalIdentifierType || 'NA',
                     });
                     break;
                 case 'Shoes':
