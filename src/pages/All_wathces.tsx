@@ -44,7 +44,6 @@ const AllWatches = () => {
     const [selectedWatch, setSelectedWatch] = useState(null);
     const [cart, setCart] = useState([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [selectedService, setSelectedService] = useState(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isFiltersOpen, setIsFiltersOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -112,66 +111,6 @@ const AllWatches = () => {
             <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`}>&#9733;</span>
         ));
     };
-
-    const handleServiceClick = (service) => {
-        setSelectedService(service);
-        setIsFormOpen(true);
-    };
-
-    const renderServiceSection = () => (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center">
-                <h2 className="text-3xl font-light uppercase tracking-widest text-gray-700">
-                    Our Services
-                </h2>
-                <hr className="border-gray-400 mt-3 mx-auto w-1/2" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-                {[
-                    {
-                        title: "Watch Preparation",
-                        description: "We ensure your smartwatch is fully charged, updated, and ready to use upon delivery."
-                    },
-                    {
-                        title: "Personal Modification",
-                        description: "Customize your smartwatch with personalized settings, watch faces, and more."
-                    },
-                    {
-                        title: "Extended Warranty",
-                        description: "Get extended warranty coverage for your smartwatch for added peace of mind."
-                    },
-                    {
-                        title: "Repair & Maintenance",
-                        description: "Professional repair and maintenance services to keep your smartwatch in top condition."
-                    },
-                    {
-                        title: "Software Updates",
-                        description: "Regular software updates to ensure your smartwatch has the latest features and security patches."
-                    },
-                    {
-                        title: "Data Migration",
-                        description: "Seamless data migration from your old smartwatch to your new one."
-                    }
-                ].map((service, index) => (
-                    <div
-                        key={index}
-                        className="bg-gray-100 p-6 rounded-lg border border-gray-300 hover:border-gray-400 transition-all duration-300 cursor-pointer"
-                        onClick={() => handleServiceClick(service.title)}
-                    >
-                        <div className="text-center">
-                            <h3 className="text-xl font-medium uppercase tracking-wide text-gray-700">
-                                {service.title}
-                            </h3>
-                            <p className="text-gray-600 mt-2">
-                                {service.description}
-                            </p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
 
     const sortWatches = (watches) => {
         switch (sortOption) {
@@ -480,8 +419,6 @@ const AllWatches = () => {
                 )} */}
                 </div>
             </div>
-
-            {renderServiceSection()}
 
             {isFormOpen && (
                 <Form
