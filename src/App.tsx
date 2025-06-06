@@ -1,7 +1,7 @@
 import "./App.css";
 import Navbar from "./components/Navbar";
 import Homepage from "./pages/Homepage";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
 import Input_form from "./components/Input_form";
 import form from "./pages/form";
@@ -31,15 +31,33 @@ import AdminPanel from './components/AdminPanel';
 import OrderSuccess from "./pages/OrderSuccess";
 import CheckoutFlow from "./components/CheckoutFlow";
 import Orders from './pages/Orders';
+import React, { useEffect, useState } from 'react';
+import Loader from './components/Loader';
+
+function RouteChangeHandler() {
+  const location = useLocation();
+  const [isRouteChanging, setIsRouteChanging] = useState(false);
+
+  useEffect(() => {
+    setIsRouteChanging(true);
+    const timer = setTimeout(() => {
+      setIsRouteChanging(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  return isRouteChanging ? <Loader /> : null;
+}
 
 function AppContent() {
   const { currentUser, onboardingCompleted, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader />;
 
   return (
     <div className="flex flex-col min-h-screen">
       <BrowserRouter>
+        <RouteChangeHandler />
         <ScrollToTop />
         <Navbar />
         <div className="flex-1 pt-20">
@@ -61,43 +79,28 @@ function AppContent() {
             {/* Redirects for specific paths */}
             <Route path="/sells" element={<Sells />} />
             <Route path="/login" element={<Login />} />
-
             <Route path="/profile" element={
               currentUser ? (
-                onboardingCompleted ? (
-                  <Profile />
-                ) : (
-                  <Navigate to="/onboarding" replace />
-                )
+                onboardingCompleted ? <Profile /> : <Navigate to="/onboarding" replace />
               ) : (
                 <Navigate to="/login" replace />
               )
             } />
-            <Route
-              path="/onboarding"
-              element={
-                currentUser ? (
-                  onboardingCompleted ? (
-                    <Navigate to="/profile" replace />
-                  ) : (
-                    <UserOnboarding />
-                  )
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
+            <Route path="/onboarding" element={
+              currentUser ? (
+                onboardingCompleted ? <Navigate to="/profile" replace /> : <UserOnboarding />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } />
+            <Route path="/admin" element={
+              currentUser?.email === 'shabdpatel0@gmail.com' ? (
+                <AdminPanel />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } />
             <Route path="/register" element={<Register />} />
-            <Route
-              path="/admin"
-              element={
-                currentUser?.email === 'shabdpatel0@gmail.com' ? (
-                  <AdminPanel />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
           </Routes>
         </div>
         <Footer />

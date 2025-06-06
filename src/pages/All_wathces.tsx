@@ -420,13 +420,13 @@ const AllWatches = () => {
                             WOMEN
                         </button>
                         <button
-                            onClick={() => setSelectedCategory('smart')}
-                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'smart'
+                            onClick={() => setSelectedCategory('vintage')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'vintage'
                                 ? 'font-medium border-b-1 border-gray-700 text-gray-900'
                                 : 'text-gray-600'
                                 }`}
                         >
-                            SMART WATCHES
+                            VINTAGE COLLECTION
                         </button>
                     </div>
                     <hr className="border-gray-400 mt-3 mx-auto w-1/2" />

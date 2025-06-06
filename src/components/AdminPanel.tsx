@@ -55,8 +55,11 @@ const AdminPanel = () => {
             navigate('/');
             return;
         }
-        fetchData();
-        fetchStats();
+        if (activeTab === 'overview') {
+            fetchStats();
+        } else {
+            fetchData();
+        }
     }, [currentUser, activeTab]);
 
     const fetchData = async () => {
@@ -103,83 +106,143 @@ const AdminPanel = () => {
 
     const fetchStats = async () => {
         try {
-            // Fetch and calculate statistics
-            const [usersSnap, ordersSnap, issuesSnap, sellersSnap] = await Promise.all([
+            let totalProducts = 0;
+            const collections = ['Watches', 'Fashion', 'Electronics', 'Accessories', 'Bags', 'Shoes'];
+            const productPromises = collections.map(col => getDocs(collection(db, col)));
+            const [usersSnap, ordersSnap, issuesSnap, sellersSnap, ...productSnaps] = await Promise.all([
                 getDocs(collection(db, 'users')),
                 getDocs(collection(db, 'orders')),
                 getDocs(collection(db, 'issues')),
-                getDocs(query(collection(db, 'users'), where('isSeller', '==', true)))
+                getDocs(query(collection(db, 'users'), where('isSeller', '==', true))),
+                ...productPromises
             ]);
+
+            // Calculate total products
+            productSnaps.forEach(snap => {
+                totalProducts += snap.size;
+            });
 
             let totalRevenue = 0;
             const monthlyRevenue = {};
             const categoryStats = {};
             const sellerStats = {};
-            const topProductsList = [];
+            const userGrowthData = [];
+            const orderTrendsData = [];
 
+            // Process orders
             ordersSnap.docs.forEach(doc => {
                 const order = doc.data();
-                // Add null check for order.createdAt
-                if (order.createdAt && typeof order.createdAt.toDate === 'function') {
-                    const date = order.createdAt.toDate();
-                    const month = date.toLocaleString('default', { month: 'short' });
-                    monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (order.total || 0);
+
+                // Calculate total revenue from order total or items
+                if (order.total) {
+                    totalRevenue += order.total;
+                } else if (order.amount) {
+                    totalRevenue += order.amount;
+                } else if (order.items && Array.isArray(order.items)) {
+                    // If no total/amount, calculate from items
+                    const orderTotal = order.items.reduce((sum, item) => {
+                        return sum + (item.price || item.Price || 0) * (item.quantity || 1);
+                    }, 0);
+                    totalRevenue += orderTotal;
                 }
-                totalRevenue += order.total || 0;
-            });
 
-            setStats({
-                totalUsers: usersSnap.size,
-                totalOrders: ordersSnap.size,
-                totalIssues: issuesSnap.size,
-                totalRevenue,
-                activeSellers: sellersSnap.size
-            });
+                // Monthly revenue with better date handling
+                if (order.orderDate || order.createdAt) {
+                    const date = (order.orderDate || order.createdAt).toDate();
+                    const month = date.toLocaleString('default', { month: 'short' });
+                    const amount = order.total || order.amount || 0;
+                    monthlyRevenue[month] = (monthlyRevenue[month] || 0) + amount;
+                }
 
-            // Calculate analytics
-            ordersSnap.docs.forEach(doc => {
-                const order = doc.data();
+                // Category stats with better item handling
+                if (order.items && Array.isArray(order.items)) {
+                    order.items.forEach(item => {
+                        const collection = item.collection || item.category || 'Other';
+                        categoryStats[collection] = (categoryStats[collection] || 0) + 1;
+                    });
+                }
 
-                // Track products sold
-                order.items?.forEach(item => {
-                    categoryStats[item.collection] = (categoryStats[item.collection] || 0) + 1;
-
-                    const existingProduct = topProductsList.find(p => p.id === item.id);
-                    if (existingProduct) {
-                        existingProduct.sales += 1;
-                        existingProduct.revenue += item.price;
+                // Order trends with better date handling
+                if (order.orderDate || order.createdAt) {
+                    const date = (order.orderDate || order.createdAt).toDate();
+                    const month = date.toLocaleString('default', { month: 'short' });
+                    const existingTrend = orderTrendsData.find(t => t.month === month);
+                    if (existingTrend) {
+                        existingTrend.orders += 1;
+                        existingTrend.revenue = (existingTrend.revenue || 0) + (order.total || order.amount || 0);
                     } else {
-                        topProductsList.push({
-                            id: item.id,
-                            name: item.name,
-                            sales: 1,
-                            revenue: item.price
+                        orderTrendsData.push({
+                            month,
+                            orders: 1,
+                            revenue: order.total || order.amount || 0
                         });
                     }
-                });
+                }
+            });
+
+            // Process users for growth data
+            usersSnap.docs.forEach(doc => {
+                const user = doc.data();
+                if (user.createdAt && typeof user.createdAt.toDate === 'function') {
+                    const date = user.createdAt.toDate();
+                    const month = date.toLocaleString('default', { month: 'short' });
+                    const existingMonth = userGrowthData.find(d => d.month === month);
+                    if (existingMonth) {
+                        existingMonth.users += 1;
+                    } else {
+                        userGrowthData.push({ month, users: 1 });
+                    }
+                }
             });
 
             // Process sellers
-            sellersSnap.docs.forEach(doc => {
-                const seller = doc.data();
-                sellerStats[seller.email] = {
-                    name: seller.personalInfo?.firstName || seller.email,
-                    products: products.filter(p => p.Seller?.Email === seller.email).length,
-                    revenue: 0 // Calculate from orders
-                };
+            const sellerPerformanceData = await Promise.all(
+                sellersSnap.docs.map(async doc => {
+                    const seller = doc.data();
+                    const sellerOrders = await getDocs(
+                        query(collection(db, 'orders'), where('sellerId', '==', doc.id))
+                    );
+                    const revenue = sellerOrders.docs.reduce((sum, order) => sum + (order.data().total || 0), 0);
+                    return {
+                        name: seller.personalInfo?.firstName || seller.email,
+                        revenue,
+                        products: totalProducts, // You might want to filter by seller
+                    };
+                })
+            );
+
+            setStats({
+                totalUsers: usersSnap.size,
+                totalProducts,
+                totalOrders: ordersSnap.size,
+                totalRevenue: Math.round(totalRevenue * 100) / 100, // Round to 2 decimal places
+                totalIssues: issuesSnap.size,
+                activeSellers: sellersSnap.size
             });
 
             setAnalytics({
-                revenueByMonth: Object.entries(monthlyRevenue).map(([month, amount]) => ({
-                    month,
-                    amount
-                })),
-                categoryDistribution: Object.entries(categoryStats).map(([name, value]) => ({
-                    name,
-                    value
-                })),
-                sellerPerformance: Object.values(sellerStats),
-                topProducts: topProductsList.sort((a, b) => b.revenue - a.revenue).slice(0, 5)
+                revenueByMonth: Object.entries(monthlyRevenue)
+                    .map(([month, amount]) => ({
+                        month,
+                        amount,
+                        formatted: `₹${amount.toLocaleString()}`
+                    }))
+                    .sort((a, b) => {
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        return months.indexOf(a.month) - months.indexOf(b.month);
+                    }),
+                categoryDistribution: Object.entries(categoryStats)
+                    .map(([name, value]) => ({ name, value })),
+                sellerPerformance: sellerPerformanceData,
+                userGrowth: userGrowthData.sort((a, b) => {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return months.indexOf(a.month) - months.indexOf(b.month);
+                }),
+                orderTrends: orderTrendsData.sort((a, b) => {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return months.indexOf(a.month) - months.indexOf(b.month);
+                }),
+                topProducts: [] // This will be populated from the fetchData function
             });
 
         } catch (error) {
@@ -323,13 +386,18 @@ const AdminPanel = () => {
                 user.personalInfo?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 user.personalInfo?.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
 
+            // Determine if user is active based on last login
+            const isUserActive = user.lastLogin &&
+                typeof user.lastLogin.toDate === 'function' &&
+                (new Date().getTime() - user.lastLogin.toDate().getTime()) < (24 * 60 * 60 * 1000); // Active if logged in within last 24 hours
+
             const matchesType = filters.users.type === 'all' || (
                 filters.users.type === 'seller' ? user.isSeller :
                     filters.users.type === 'customer' ? !user.isSeller : true
             );
 
             const matchesStatus = filters.users.status === 'all' ||
-                String(user.isActive) === filters.users.status;
+                String(isUserActive) === filters.users.status;
 
             return matchesSearch && matchesType && matchesStatus;
         });
@@ -573,7 +641,9 @@ const AdminPanel = () => {
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-sm sm:text-base text-gray-600">Revenue</span>
-                        <span className="text-xl sm:text-2xl font-semibold">₹{stats.totalRevenue.toLocaleString()}</span>
+                        <span className="text-xl sm:text-2xl font-semibold">
+                            ₹{stats.totalRevenue.toLocaleString()}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -693,37 +763,45 @@ const AdminPanel = () => {
                         <div className="overflow-hidden">
                             {/* Overview Section */}
                             {activeTab === 'overview' && (
-                                <div className="p-4 sm:p-6 space-y-6">
-                                    {/* Stats Dashboard */}
+                                <>
                                     {renderDashboard()}
-
-                                    {/* Analytics Charts */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                         {/* Revenue Chart */}
-                                        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                                            <h3 className="text-base sm:text-lg font-medium mb-4">Revenue Trends</h3>
-                                            <div className="h-60 sm:h-80">
+                                        <div className="bg-white rounded-lg shadow p-4">
+                                            <h3 className="text-lg font-medium mb-4">Revenue Trends</h3>
+                                            <div className="h-80">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <AreaChart data={analytics.revenueByMonth}>
                                                         <CartesianGrid strokeDasharray="3 3" />
                                                         <XAxis dataKey="month" />
                                                         <YAxis />
                                                         <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
-                                                        <Area
-                                                            type="monotone"
-                                                            dataKey="amount"
-                                                            stroke="#3B82F6"
-                                                            fill="#93C5FD"
-                                                        />
+                                                        <Area type="monotone" dataKey="amount" stroke="#3B82F6" fill="#93C5FD" />
                                                     </AreaChart>
                                                 </ResponsiveContainer>
                                             </div>
                                         </div>
 
+                                        {/* Order Trends */}
+                                        <div className="bg-white rounded-lg shadow p-4">
+                                            <h3 className="text-lg font-medium mb-4">Order Trends</h3>
+                                            <div className="h-80">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <LineChart data={analytics.orderTrends}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis dataKey="month" />
+                                                        <YAxis />
+                                                        <Tooltip />
+                                                        <Line type="monotone" dataKey="orders" stroke="#10B981" />
+                                                    </LineChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+
                                         {/* Category Distribution */}
-                                        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                                            <h3 className="text-base sm:text-lg font-medium mb-4">Category Distribution</h3>
-                                            <div className="h-60 sm:h-80">
+                                        <div className="bg-white rounded-lg shadow p-4">
+                                            <h3 className="text-lg font-medium mb-4">Category Distribution</h3>
+                                            <div className="h-80">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <PieChart>
                                                         <Pie
@@ -733,72 +811,36 @@ const AdminPanel = () => {
                                                             cx="50%"
                                                             cy="50%"
                                                             outerRadius={80}
-                                                            label={({ name, percent }) =>
-                                                                `${name} ${(percent * 100).toFixed(0)}%`
-                                                            }
+                                                            label
                                                         >
                                                             {analytics.categoryDistribution.map((entry, index) => (
-                                                                <Cell
-                                                                    key={`cell-${index}`}
-                                                                    fill={[
-                                                                        '#3B82F6', '#10B981', '#F59E0B',
-                                                                        '#6366F1', '#EC4899', '#8B5CF6'
-                                                                    ][index % 6]}
-                                                                />
+                                                                <Cell key={`cell-${index}`} fill={['#3B82F6', '#10B981', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6'][index % 6]} />
                                                             ))}
                                                         </Pie>
                                                         <Tooltip />
+                                                        <Legend />
                                                     </PieChart>
                                                 </ResponsiveContainer>
                                             </div>
                                         </div>
 
-                                        {/* Top Products */}
-                                        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                                            <h3 className="text-base sm:text-lg font-medium mb-4">Top Products</h3>
-                                            <div className="space-y-4">
-                                                {analytics.topProducts.map((product, index) => (
-                                                    <div key={product.id} className="flex items-center justify-between">
-                                                        <div className="flex items-center">
-                                                            <span className="text-lg font-bold text-gray-400 w-8">
-                                                                #{index + 1}
-                                                            </span>
-                                                            <div>
-                                                                <p className="font-medium">{product.name}</p>
-                                                                <p className="text-sm text-gray-500">
-                                                                    {product.sales} units sold
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <span className="font-medium text-green-600">
-                                                            ₹{product.revenue.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Seller Performance */}
-                                        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                                            <h3 className="text-base sm:text-lg font-medium mb-4">Seller Performance</h3>
-                                            <div className="space-y-4">
-                                                {analytics.sellerPerformance.map((seller) => (
-                                                    <div key={seller.name} className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="font-medium">{seller.name}</p>
-                                                            <p className="text-sm text-gray-500">
-                                                                {seller.products} products listed
-                                                            </p>
-                                                        </div>
-                                                        <span className="font-medium text-blue-600">
-                                                            ₹{seller.revenue.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                ))}
+                                        {/* User Growth */}
+                                        <div className="bg-white rounded-lg shadow p-4">
+                                            <h3 className="text-lg font-medium mb-4">User Growth</h3>
+                                            <div className="h-80">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={analytics.userGrowth}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis dataKey="month" />
+                                                        <YAxis />
+                                                        <Tooltip />
+                                                        <Bar dataKey="users" fill="#6366F1" />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </>
                             )}
 
                             {/* Products Section */}
@@ -1268,14 +1310,29 @@ const AdminPanel = () => {
                                                     <td className="px-4 sm:px-6 py-4">
                                                         <div className="flex flex-col gap-2">
                                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                                ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                                {user.isActive ? 'Active' : 'Inactive'}
+                                                                ${user.lastLogin &&
+                                                                    typeof user.lastLogin.toDate === 'function' &&
+                                                                    (new Date().getTime() - user.lastLogin.toDate().getTime()) < (24 * 60 * 60 * 1000)
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : 'bg-gray-100 text-gray-800'}`}>
+                                                                {user.lastLogin &&
+                                                                    typeof user.lastLogin.toDate === 'function' &&
+                                                                    (new Date().getTime() - user.lastLogin.toDate().getTime()) < (24 * 60 * 60 * 1000)
+                                                                    ? 'Active'
+                                                                    : 'Inactive'}
                                                             </span>
-                                                            <span className="text-xs text-gray-500">
-                                                                Joined: {user.createdAt && typeof user.createdAt.toDate === 'function'
-                                                                    ? user.createdAt.toDate().toLocaleDateString()
-                                                                    : 'N/A'}
-                                                            </span>
+                                                            <div className="flex flex-col text-xs text-gray-500">
+                                                                <span>
+                                                                    Joined: {user.createdAt && typeof user.createdAt.toDate === 'function'
+                                                                        ? user.createdAt.toDate().toLocaleDateString()
+                                                                        : 'N/A'}
+                                                                </span>
+                                                                <span>
+                                                                    Last login: {user.lastLogin && typeof user.lastLogin.toDate === 'function'
+                                                                        ? user.lastLogin.toDate().toLocaleString()
+                                                                        : 'Never'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </tr>
