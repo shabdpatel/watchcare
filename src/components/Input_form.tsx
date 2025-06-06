@@ -129,7 +129,7 @@ const InputForm = () => {
     const [error, setError] = useState('');
 
     const collectionTypeOptions = {
-        Watches: ['Trending', 'Exclusive', 'Smart'],
+        Watches: ['Trending', 'Exclusive', 'Smart', 'Vintage Collection'],
         Shoes: ['Casual', 'Sports', 'Formal', 'Sandals'],
         Bags: ['Backpack', 'Handbag', 'Tote', 'Travel'],
         Fashion: ['Casual', 'Formal', 'Sports', 'Traditional'],

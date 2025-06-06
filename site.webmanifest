@@ -4,8 +4,14 @@
     "description": "Premium Lifestyle Store - Luxury Watches, Fashion & Accessories",
     "start_url": "/",
     "display": "standalone",
+    "orientation": "portrait",
     "background_color": "#ffffff",
     "theme_color": "#000000",
+    "prefer_related_applications": false,
+    "categories": [
+        "shopping",
+        "lifestyle"
+    ],
     "icons": [
         {
             "src": "/assets/android-chrome-192x192.png",
