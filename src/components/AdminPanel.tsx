@@ -48,7 +48,7 @@ const AdminPanel = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
-    const ADMIN_EMAILS = ['shabdpatel0@gmail.com', '22bph028@nith.ac.in'];
+    const ADMIN_EMAILS = ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'];
 
     useEffect(() => {
         if (!ADMIN_EMAILS.includes(currentUser?.email || '')) {
