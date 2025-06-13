@@ -70,11 +70,26 @@ const Footer = () => {
                             Customer Service
                         </h3>
                         <ul className="space-y-2">
-                            <li><Link to="/profile" className="hover:text-gray-900 transition">Order Tracking</Link></li>
-                            <li><Link to="/accessories" className="hover:text-gray-900 transition">FAQs</Link></li>
-                            <li><Link to="/all_watches" className="hover:text-gray-900 transition">Returns & Exchanges</Link></li>
-                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Shipping Information</Link></li>
-                            <li><Link to="/profile" className="hover:text-gray-900 transition">Contact Support</Link></li>
+                            <li><Link to="/orders" className="hover:text-gray-900 transition">Order Tracking</Link></li>
+                            <li><Link to="/cart" className="hover:text-gray-900 transition">Shopping Cart</Link></li>
+                            <li><Link to="/checkout" className="hover:text-gray-900 transition">Checkout</Link></li>
+                            <li><Link to="/profile" className="hover:text-gray-900 transition">My Account</Link></li>
+                            <li><Link to="/sells" className="hover:text-gray-900 transition">Sell with Us</Link></li>
+                        </ul>
+                    </div>
+
+                    {/* Shop Categories Section */}
+                    <div>
+                        <h3 className="text-gray-900 uppercase font-semibold mb-3">
+                            Shop Categories
+                        </h3>
+                        <ul className="space-y-2">
+                            <li><Link to="/all_watches" className="hover:text-gray-900 transition">Watches</Link></li>
+                            <li><Link to="/shoes" className="hover:text-gray-900 transition">Shoes</Link></li>
+                            <li><Link to="/fashion" className="hover:text-gray-900 transition">Fashion</Link></li>
+                            <li><Link to="/bags" className="hover:text-gray-900 transition">Bags</Link></li>
+                            <li><Link to="/electronics" className="hover:text-gray-900 transition">Electronics</Link></li>
+                            <li><Link to="/accessories" className="hover:text-gray-900 transition">Accessories</Link></li>
                         </ul>
                     </div>
 
@@ -129,7 +144,7 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Social Media and App Section */}
+                    {/* Social Media Section */}
                     <div>
                         <h3 className="text-gray-900 uppercase font-semibold mb-3">
                             Connect With Us
@@ -145,35 +160,14 @@ const Footer = () => {
                                 <FaInstagram />
                             </Link>
                         </div>
-                        <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                                Download Our App
-                            </h4>
-                            <div className="flex gap-2">
-                                <Link to="/">
-                                    <img src="/app-store.svg" alt="App Store" className="h-10" />
-                                </Link>
-                                <Link to="/">
-                                    <img src="/google-play.svg" alt="Google Play" className="h-10" />
-                                </Link>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                {/* Payment Methods and Copyright Section */}
+                {/* Copyright Section */}
                 <div className="mt-12 pt-8 border-t border-gray-200">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="flex gap-4 flex-wrap">
-                            <img src="/visa.svg" alt="Visa" className="h-8" />
-                            <img src="/mastercard.svg" alt="Mastercard" className="h-8" />
-                            <img src="/paypal.svg" alt="PayPal" className="h-8" />
-                            <img src="/amex.svg" alt="American Express" className="h-8" />
-                        </div>
-                        <div className="text-gray-600 text-sm text-center md:text-right">
-                            <p>&copy; {new Date().getFullYear()} Unbox. All rights reserved.</p>
-                            <p className="mt-1">Premium Watch Retailer</p>
-                        </div>
+                    <div className="text-gray-600 text-sm text-center">
+                        <p>&copy; {new Date().getFullYear()} Unbox. All rights reserved.</p>
+                        <p className="mt-1">Premium Watch Retailer</p>
                     </div>
                 </div>
             </div>

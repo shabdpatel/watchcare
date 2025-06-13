@@ -132,6 +132,11 @@ const AllWatches = () => {
     // Update the filter function
     const filterWatches = (watches) => {
         return watches.filter(watch => {
+            // Collection Type filtering
+            if (selectedCategory === 'vintage' && watch.CollectionType !== 'Vintage Collection') {
+                return false;
+            }
+
             // Brand filtering
             if (filters.brands.length > 0 && !filters.brands.includes(watch.Company)) {
                 return false;
