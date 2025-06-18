@@ -1,0 +1,49 @@
+.instagram-embed-container {
+    position: relative;
+    padding-bottom: 120%;
+    /* Mobile padding */
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    background: #eee3e3;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+    .instagram-embed-container {
+        padding-bottom: 152%;
+        /* Tablet padding */
+        max-width: 350px;
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 1024px) {
+    .instagram-embed-container {
+        padding-bottom: 60%;
+        /* Desktop padding */
+    }
+}
+
+.instagram-embed-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}

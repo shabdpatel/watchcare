@@ -17,17 +17,17 @@ const Footer = () => {
     };
 
     return (
-        <footer className="bg-gray-50 text-gray-600 py-12">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <footer className="bg-gray-50 text-gray-600 py-8 sm:py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Newsletter Subscription Section */}
-                <div className="pb-8 mb-8 border-b border-gray-200">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="pb-6 sm:pb-8 mb-6 sm:mb-8 border-b border-gray-200">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
                         {/* Subscription Text */}
-                        <div className="mb-4 md:mb-0">
+                        <div className="w-full md:w-auto mb-4 md:mb-0">
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">
                                 Stay Updated
                             </h3>
-                            <p className="text-gray-600">
+                            <p className="text-sm sm:text-base text-gray-600">
                                 Subscribe for exclusive offers and style inspiration
                             </p>
                         </div>
@@ -35,7 +35,7 @@ const Footer = () => {
                         {/* Subscription Form */}
                         <form
                             onSubmit={handleSubscribe}
-                            className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
+                            className="flex flex-col sm:flex-row gap-3 w-full md:w-auto"
                         >
                             <input
                                 type="email"
@@ -43,11 +43,11 @@ const Footer = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
                             />
                             <button
                                 type="submit"
-                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap w-full sm:w-auto"
                             >
                                 Subscribe
                             </button>
@@ -55,15 +55,15 @@ const Footer = () => {
 
                         {/* Subscription Success Message */}
                         {isSubscribed && (
-                            <div className="mt-4 md:mt-0 text-sm text-green-600">
-                                Thank you for subscribing! Please check your email for confirmation.
+                            <div className="mt-3 md:mt-0 text-sm text-green-600 w-full md:w-auto">
+                                Thank you for subscribing!
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Main Footer Content Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8 text-sm">
                     {/* Customer Service Section */}
                     <div>
                         <h3 className="text-gray-900 uppercase font-semibold mb-3">
@@ -144,19 +144,19 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Social Media Section */}
-                    <div>
+                    {/* Social Media Section - Updated */}
+                    <div className="col-span-2 sm:col-span-3 lg:col-span-1">
                         <h3 className="text-gray-900 uppercase font-semibold mb-3">
                             Connect With Us
                         </h3>
-                        <div className="flex space-x-4 mb-4">
-                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                        <div className="flex space-x-6 mb-4">
+                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-xl sm:text-2xl p-1">
                                 <FaTwitter />
                             </Link>
-                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-xl sm:text-2xl p-1">
                                 <FaFacebookF />
                             </Link>
-                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-lg">
+                            <Link to="/" className="text-gray-600 hover:text-gray-900 transition text-xl sm:text-2xl p-1">
                                 <FaInstagram />
                             </Link>
                         </div>
@@ -164,8 +164,8 @@ const Footer = () => {
                 </div>
 
                 {/* Copyright Section */}
-                <div className="mt-12 pt-8 border-t border-gray-200">
-                    <div className="text-gray-600 text-sm text-center">
+                <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-gray-200">
+                    <div className="text-gray-600 text-xs sm:text-sm text-center">
                         <p>&copy; {new Date().getFullYear()} Unbox. All rights reserved.</p>
                         <p className="mt-1">Premium Watch Retailer</p>
                     </div>

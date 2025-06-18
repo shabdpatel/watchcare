@@ -23,12 +23,15 @@ import {
 import { FaFacebook, FaInstagram, FaTwitter, FaShoePrints } from 'react-icons/fa';
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
+import ProductCard from "../components/ProductCard";
 
 const Homepage = () => {
     const [allItems, setAllItems] = useState([]);
     const [featuredProducts, setFeaturedProducts] = useState([]);
     const [newArrivals, setNewArrivals] = useState([]);
     const [trendingProducts, setTrendingProducts] = useState([]);
+    const [vintageWatches, setVintageWatches] = useState([]);
+    const [warrantyItems, setWarrantyItems] = useState([]); // Add this line
 
     useEffect(() => {
         const fetchAllItems = async () => {
@@ -45,7 +48,10 @@ const Homepage = () => {
                             collectionName,
                             rating: Math.floor(Math.random() * 5) + 1,
                             reviews: Math.floor(Math.random() * 100),
-                            dateAdded: data.dateAdded || new Date().toISOString(),
+                            // Handle different date formats and provide a fallback
+                            dateAdded: data.dateAdded ?
+                                (data.dateAdded.toDate ? data.dateAdded.toDate().toISOString() : new Date(data.dateAdded).toISOString())
+                                : new Date().toISOString(), // Use current date as fallback
                             Image: data.images?.[0] || data.Image || '',
                             name: data.name || data.Brand || 'Product Name',
                             Brand: data.Brand || data.name || '',
@@ -56,22 +62,37 @@ const Homepage = () => {
                     allProducts = [...allProducts, ...items];
                 }
 
+                // Filter vintage watches
+                const vintage = allProducts
+                    .filter(product => product.CollectionType === 'Vintage Collection')
+                    .slice(0, 6);
+                setVintageWatches(vintage);
+
+                // Update the warranty items filter to check for the Warranty object structure
+                const warranty = allProducts
+                    .filter(product =>
+                        product.Warranty?.Status === 'Active' ||
+                        (typeof product.Warranty === 'boolean' && product.Warranty === true)
+                    )
+                    .slice(0, 6);
+                setWarrantyItems(warranty);
+
+                // Sort all products by dateAdded for new arrivals
+                const newest = [...allProducts]
+                    .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+                    .slice(0, 6);
+                setNewArrivals(newest);
+
                 // Sort by rating for featured products
                 const featured = [...allProducts]
                     .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-                    .slice(0, 3);
+                    .slice(0, 6);
                 setFeaturedProducts(featured);
 
-                // Sort by date for new arrivals (most recent first)
-                const newest = [...allProducts]
-                    .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
-                    .slice(0, 3);  // Change from 2 to 3 items
-                setNewArrivals(newest);
-
-                // Update trending selection to exactly 3 items
+                // Update trending selection to exactly 6 items
                 const trending = [...allProducts]
                     .sort(() => Math.random() - 0.5)
-                    .slice(0, 3);  // Ensure exactly 3 items
+                    .slice(0, 6);
                 setTrendingProducts(trending);
 
                 setAllItems(allProducts);
@@ -82,6 +103,12 @@ const Homepage = () => {
 
         fetchAllItems();
     }, []);
+
+    // Dummy handlers for wishlist/cart
+    const handleToggleWishlist = () => { };
+    const handleAddToCart = (e: React.MouseEvent, item: any) => {
+        e.preventDefault();
+    };
 
     const categories = [
         {
@@ -128,13 +155,13 @@ const Homepage = () => {
         {
             name: 'Summer Collection',
             description: 'Light and stylish pieces for the season',
-            image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',  // Updated to clothes image
+            image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
             route: '/fashion'
         },
         {
             name: 'Luxury Edition',
             description: 'Premium timepieces for connoisseurs',
-            image: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3',  // Updated to luxury watch image
+            image: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3',
             route: '/all_watches'
         }
     ];
@@ -229,9 +256,12 @@ const Homepage = () => {
             {/* Featured Products */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12">
-                    <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-4 sm:mb-0">
-                        Featured Collection
-                    </h2>
+                    <div>
+                        <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-2">
+                            Featured Collection
+                        </h2>
+                        <p className="text-gray-600">Handpicked selection of premium timepieces</p>
+                    </div>
                     <Link
                         to="/all_watches"
                         className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
@@ -239,66 +269,15 @@ const Homepage = () => {
                         View All <ArrowRightIcon className="w-4 h-4" />
                     </Link>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                     {featuredProducts.map((product) => (
-                        <Link
-                            to={product.collectionName === 'Watches' ? '/all_watches' : `/${product.collectionName.toLowerCase()}`}
+                        <ProductCard
                             key={product.id}
-                            className="group"
-                        >
-                            <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
-                                <div className="aspect-square overflow-hidden relative">
-                                    <img
-                                        src={product.Image || product.images?.[0]}
-                                        alt={product.Company || product.name}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <div className="absolute top-4 left-4">
-                                        <span className="bg-white/90 backdrop-blur-sm px-4 py-1 text-xs font-medium uppercase tracking-wider rounded-full">
-                                            {product.collectionName}
-                                        </span>
-                                    </div>
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-colors">
-                                            <HeartIcon className="w-5 h-5 text-gray-900" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="p-3 sm:p-4 space-y-1">
-                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                                        <h3 className="text-lg sm:text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
-                                            {product.Company || product.name}
-                                        </h3>
-                                        <div className="flex items-center gap-1">
-                                            <div className="flex text-yellow-400">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <StarIcon
-                                                        key={i}
-                                                        className={`w-4 h-4 ${i < (product.rating || 0) ? 'fill-current' : 'fill-gray-300'
-                                                            }`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p className="text-gray-600 text-lg font-light">
-                                        ₹{product.Price?.toLocaleString() || 'N/A'}
-                                    </p>
-                                    <p className="text-gray-500 text-sm line-clamp-2">
-                                        {product.Description || product.description}
-                                    </p>
-                                    <div className="flex gap-2 mt-2">
-                                        <button
-                                            className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
-                                        >
-                                            Buy Now
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </Link>
+                            item={product}
+                            isWishlisted={false}
+                            onToggleWishlist={handleToggleWishlist}
+                            onAddToCart={handleAddToCart}
+                        />
                     ))}
                 </div>
             </div>
@@ -307,9 +286,12 @@ const Homepage = () => {
             <div className="bg-white py-16">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12">
-                        <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-4 sm:mb-0">
-                            Trending Now
-                        </h2>
+                        <div>
+                            <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-2">
+                                Trending Now
+                            </h2>
+                            <p className="text-gray-600">Most popular styles of the season</p>
+                        </div>
                         <Link
                             to="/all_watches"
                             className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
@@ -317,69 +299,89 @@ const Homepage = () => {
                             View All <ArrowRightIcon className="w-4 h-4" />
                         </Link>
                     </div>
-                    {/* Change grid-cols-3 to be responsive */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                         {trendingProducts.map((product) => (
-                            <Link
-                                to={product.collectionName === 'Watches' ? '/all_watches' : `/${product.collectionName.toLowerCase()}`}
+                            <ProductCard
                                 key={product.id}
-                                className="group"
-                            >
-                                <div className="group relative bg-gray-100 rounded-lg overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300">
-                                    <div className="aspect-square overflow-hidden relative">
-                                        <img
-                                            src={product.Image || product.images?.[0]}
-                                            alt={product.Company || product.name}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="absolute top-4 left-4">
-                                            <span className="bg-white/90 backdrop-blur-sm px-4 py-1 text-xs font-medium uppercase tracking-wider rounded-full">
-                                                {product.collectionName}
-                                            </span>
-                                        </div>
-                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-colors">
-                                                <HeartIcon className="w-5 h-5 text-gray-900" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3 sm:p-4 space-y-1">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                                            <h3 className="text-lg sm:text-xl font-medium uppercase tracking-wide text-gray-900 truncate max-w-[70%]">
-                                                {product.Company || product.name}
-                                            </h3>
-                                            <div className="flex items-center gap-1">
-                                                <div className="flex text-yellow-400">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <StarIcon
-                                                            key={i}
-                                                            className={`w-4 h-4 ${i < (product.rating || 0) ? 'fill-current' : 'fill-gray-300'
-                                                                }`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <p className="text-gray-600 text-lg font-light">
-                                            ₹{product.Price?.toLocaleString() || 'N/A'}
-                                        </p>
-                                        <p className="text-gray-500 text-sm line-clamp-2">
-                                            {product.Description || product.description}
-                                        </p>
-                                        <div className="flex gap-2 mt-2">
-                                            <button
-                                                className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-400 rounded-md hover:bg-gray-300/30 transition-colors duration-300 flex items-center justify-center gap-2"
-                                            >
-                                                Buy Now
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
+                                item={product}
+                                isWishlisted={false}
+                                onToggleWishlist={handleToggleWishlist}
+                                onAddToCart={handleAddToCart}
+                            />
                         ))}
                     </div>
+                </div>
+            </div>
+
+            {/* Vintage Collection Section */}
+            <div className="bg-gray-50 py-16">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12">
+                        <div>
+                            <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-2">
+                                Vintage Collection
+                            </h2>
+                            <p className="text-gray-600">Timeless classics from renowned watchmakers</p>
+                        </div>
+                        <Link
+                            to="/all_watches"
+                            className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
+                        >
+                            View All <ArrowRightIcon className="w-4 h-4" />
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        {vintageWatches.map((product) => (
+                            <ProductCard
+                                key={product.id}
+                                item={product}
+                                isWishlisted={false}
+                                onToggleWishlist={handleToggleWishlist}
+                                onAddToCart={handleAddToCart}
+                            />
+                        ))}
+                    </div>
+                    {vintageWatches.length === 0 && (
+                        <div className="text-center py-12">
+                            <p className="text-gray-500">No vintage watches available</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Warranty Items Section */}
+            <div className="bg-white py-16">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12">
+                        <div>
+                            <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-2">
+                                Under Warranty
+                            </h2>
+                            <p className="text-gray-600">Products with extended warranty coverage</p>
+                        </div>
+                        <Link
+                            to="/all_watches"
+                            className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
+                        >
+                            View All <ArrowRightIcon className="w-4 h-4" />
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        {warrantyItems.map((product) => (
+                            <ProductCard
+                                key={product.id}
+                                item={product}
+                                isWishlisted={false}
+                                onToggleWishlist={handleToggleWishlist}
+                                onAddToCart={handleAddToCart}
+                            />
+                        ))}
+                    </div>
+                    {warrantyItems.length === 0 && (
+                        <div className="text-center py-12">
+                            <p className="text-gray-500">No warranty items available</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -442,66 +444,32 @@ const Homepage = () => {
                 </div>
             </div>
 
-            {/* New Arrivals Banner */}
-            <div className="bg-gray-900 py-16 sm:py-20">
+            {/* New Arrivals Section */}
+            <div className="bg-white py-16 sm:py-20">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-8 sm:mb-12">
-                        <h2 className="text-2xl sm:text-3xl font-light text-white uppercase tracking-wider mb-2 sm:mb-4">
-                            New Arrivals
-                        </h2>
-                        <p className="text-gray-400">Be the first to discover our latest additions</p>
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12">
+                        <div>
+                            <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-2">
+                                New Arrivals
+                            </h2>
+                            <p className="text-gray-600">Latest additions to our exclusive collection</p>
+                        </div>
+                        <Link
+                            to="/all_watches"
+                            className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
+                        >
+                            View All <ArrowRightIcon className="w-4 h-4" />
+                        </Link>
                     </div>
-                    {/* Change grid-cols-3 to be responsive */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                         {newArrivals.map((product) => (
-                            <Link
-                                to={product.collectionName === 'Watches' ? '/all_watches' : `/${product.collectionName.toLowerCase()}`}
+                            <ProductCard
                                 key={product.id}
-                                className="group"
-                            >
-                                <div className="group relative bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-500 transition-all duration-300">
-                                    <div className="aspect-square overflow-hidden relative">
-                                        <img
-                                            src={product.Image || product.images?.[0]}
-                                            alt={product.Company || product.name}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="absolute top-4 left-4">
-                                            <span className="bg-white/90 backdrop-blur-sm px-4 py-1 text-xs font-medium uppercase tracking-wider rounded-full">
-                                                New
-                                            </span>
-                                        </div>
-                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-colors">
-                                                <HeartIcon className="w-5 h-5 text-gray-900" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3 sm:p-4 space-y-1">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="text-xl font-medium uppercase tracking-wide text-white truncate max-w-[70%]">
-                                                {product.Company || product.name}
-                                            </h3>
-                                            <span className="text-gray-400 text-sm">
-                                                {new Date(product.dateAdded).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        <p className="text-gray-300 text-lg font-light">
-                                            ₹{product.Price?.toLocaleString() || 'N/A'}
-                                        </p>
-                                        <p className="text-gray-400 text-sm line-clamp-2">
-                                            {product.Description || product.description}
-                                        </p>
-                                        <div className="flex gap-2 mt-2">
-                                            <button className="flex-1 py-2 text-sm uppercase tracking-wide border border-gray-500 text-white rounded-md hover:bg-white/10 transition-colors duration-300 flex items-center justify-center gap-2">
-                                                Buy Now
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
+                                item={product}
+                                isWishlisted={false}
+                                onToggleWishlist={handleToggleWishlist}
+                                onAddToCart={handleAddToCart}
+                            />
                         ))}
                     </div>
                 </div>
@@ -542,6 +510,30 @@ const Homepage = () => {
                 </div>
             </div>
 
+            {/* Instagram Feed Section */}
+            <div className="bg-gray-50 py-16">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-2">
+                            Follow Us on Instagram
+                        </h2>
+                        <p className="text-gray-600">@projectwatches3</p>
+                    </div>
+                    <div className="max-w-2xl mx-auto">
+                        <div className="h-[600px] w-full overflow-hidden rounded-lg">
+                            <iframe
+                                src="https://www.instagram.com/projectwatches3/embed"
+                                className="w-full h-full"
+                                frameBorder="0"
+                                scrolling="no"
+                                allowTransparency={true}
+                                title="Instagram Feed"
+                            ></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Shopping Benefits */}
             <div className="bg-white py-8 sm:py-16">
                 <div className="max-w-7xl mx-auto px-4">
@@ -573,6 +565,57 @@ const Homepage = () => {
                             </div>
                             <h3 className="text-sm font-medium uppercase tracking-wider">Customer Love</h3>
                             <p className="text-gray-600 text-sm mt-2">4.8/5 Average Rating</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Store Location Map */}
+            <div className="bg-gray-50 py-16">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Text Content */}
+                        <div className="flex flex-col justify-center lg:pr-8 order-2 lg:order-1">
+                            <h2 className="text-2xl sm:text-3xl font-light uppercase tracking-wider text-gray-900 mb-4">
+                                Visit Our Store
+                            </h2>
+                            <div className="space-y-4">
+                                <p className="text-gray-600">
+                                    Experience our luxury timepieces in person at our flagship store in Pune.
+                                </p>
+                                <div className="space-y-2">
+                                    <p className="text-gray-800 font-medium">Store Hours:</p>
+                                    <p className="text-gray-600">Monday - Saturday: 10:00 AM - 9:00 PM</p>
+                                    <p className="text-gray-600">Sunday: 11:00 AM - 7:00 PM</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-gray-800 font-medium">Address:</p>
+                                    <p className="text-gray-600">
+                                        123 MG Road, Camp<br />
+                                        Pune, Maharashtra 411001
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-gray-800 font-medium">Contact:</p>
+                                    <p className="text-gray-600">Phone: +91-9049408898</p>
+                                    <p className="text-gray-600">Email: prameetsw@gmail.com</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Map Container */}
+                        <div className="w-full aspect-[4/3] sm:aspect-[16/9] overflow-hidden rounded-lg shadow-lg order-1 lg:order-2">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d242118.17006357733!2d73.6981511798317!3d18.52454503738018!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2bf2e67461101%3A0x828d43bf9d9ee343!2sPune%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1750233952898!5m2!1sen!2sin"
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Store Location"
+                                className="w-full h-full"
+                            />
                         </div>
                     </div>
                 </div>
