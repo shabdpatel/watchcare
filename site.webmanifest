@@ -2,7 +2,7 @@
     "name": "Unbox Store",
     "short_name": "Unbox",
     "description": "Premium Lifestyle Store - Luxury Watches, Fashion & Accessories",
-    "start_url": "/",
+    "start_url": "https://www.unboxstores.com",
     "display": "standalone",
     "orientation": "portrait",
     "background_color": "#ffffff",
