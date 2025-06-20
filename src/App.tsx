@@ -94,7 +94,7 @@ function AppContent() {
               )
             } />
             <Route path="/admin" element={
-              currentUser?.email === 'shabdpatel0@gmail.com' ? (
+              currentUser && ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'].includes(currentUser.email) ? (
                 <AdminPanel />
               ) : (
                 <Navigate to="/login" replace />

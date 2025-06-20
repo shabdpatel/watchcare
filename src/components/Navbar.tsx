@@ -130,8 +130,8 @@ const Navbar = () => {
                         Become a Seller
                     </Link>
 
-                    {/* Add Admin Panel link for specific user */}
-                    {currentUser && currentUser.email === 'shabdpatel0@gmail.com' && (
+                    {/* Add Admin Panel link for admin users */}
+                    {currentUser && ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'].includes(currentUser.email) && (
                         <Link
                             to="/admin"
                             className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black"
