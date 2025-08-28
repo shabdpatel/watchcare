@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 import Form from "./form";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import FiltersSidebar from "../components/FiltersSidebar";
 import ProductCard from "../components/ProductCard";
 import {
@@ -27,6 +27,8 @@ const watchFilters = {
 };
 
 const AllWatches = () => {
+    const location = useLocation();
+
     // Update state declarations
     const [filters, setFilters] = useState({
         brands: [],
@@ -51,6 +53,19 @@ const AllWatches = () => {
     const [allWatches, setAllWatches] = useState([]);
     const [priceRange, setPriceRange] = useState([0, 1000000]);
     const { addToCart } = useCart();
+
+    // Check URL parameters on component mount
+    useEffect(() => {
+        const urlParams = new URLSearchParams(location.search);
+        const categoryParam = urlParams.get('category');
+        if (categoryParam === 'vintage') {
+            setSelectedCategory('vintage');
+        } else if (categoryParam === 'warranty') {
+            setSelectedCategory('warranty');
+        } else if (categoryParam === 'project') {
+            setSelectedCategory('project');
+        }
+    }, [location]);
 
     useEffect(() => {
         const fetchWatches = async () => {
@@ -134,6 +149,32 @@ const AllWatches = () => {
         return watches.filter(watch => {
             // Collection Type filtering
             if (selectedCategory === 'vintage' && watch.CollectionType !== 'Vintage Collection') {
+                return false;
+            }
+
+            // Warranty filtering
+            if (selectedCategory === 'warranty') {
+                const hasWarranty = watch.Warranty?.Status === 'Active' ||
+                    (typeof watch.Warranty === 'boolean' && watch.Warranty === true);
+                if (!hasWarranty) {
+                    return false;
+                }
+            }
+
+            // Project watches filtering (by specific email addresses)
+            if (selectedCategory === 'project') {
+                const projectEmails = ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'];
+                if (!watch.email || !projectEmails.includes(watch.email)) {
+                    return false;
+                }
+            }
+
+            // Gender filtering
+            if (selectedCategory === 'men' && watch.Gender !== 'Men') {
+                return false;
+            }
+
+            if (selectedCategory === 'women' && watch.Gender !== 'Women') {
                 return false;
             }
 
@@ -371,6 +412,24 @@ const AllWatches = () => {
                                 }`}
                         >
                             VINTAGE COLLECTION
+                        </button>
+                        <button
+                            onClick={() => setSelectedCategory('warranty')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'warranty'
+                                ? 'font-medium border-b-1 border-gray-700 text-gray-900'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            UNDER WARRANTY
+                        </button>
+                        <button
+                            onClick={() => setSelectedCategory('project')}
+                            className={`text-sm uppercase hover:text-gray-900 transition-colors ${selectedCategory === 'project'
+                                ? 'font-medium border-b-1 border-gray-700 text-gray-900'
+                                : 'text-gray-600'
+                                }`}
+                        >
+                            PROJECT WATCHES
                         </button>
                     </div>
                     <hr className="border-gray-400 mt-3 mx-auto w-1/2" />

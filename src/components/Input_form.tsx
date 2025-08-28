@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../pages/firebase';
-import { useAuth } from './AuthContext'; // Add this import at the top
+import { useAuth } from './AuthContext';
 
 const InputForm = () => {
     const { currentUser } = useAuth(); // Add this line
@@ -10,7 +10,7 @@ const InputForm = () => {
         collectionType: 'Trending',
         company: '',
         description: '',
-        images: ['', '', '', ''],
+        images: ['', '', '', '', '', '', '', ''],
         price: '',
         gender: 'Unisex',
 
@@ -127,6 +127,8 @@ const InputForm = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [uploadProgress, setUploadProgress] = useState(Array(8).fill(0));
+    const [isUploading, setIsUploading] = useState(Array(8).fill(false));
 
     const collectionTypeOptions = {
         Watches: ['Trending', 'Exclusive', 'Smart', 'Vintage Collection'],
@@ -138,13 +140,19 @@ const InputForm = () => {
     };
 
     const requiredFields = {
-        common: ['company', 'description', 'price', 'manufacturedBy', 'importedBy'],
+        common: ['company', 'description', 'price', 'sellerName', 'sellerPhone', 'sellerEmail'],
         Watches: ['movement', 'material'],
-        Shoes: ['shoeType', 'closureType', 'soleMaterial'],
-        Bags: ['bagType', 'bagClosureType', 'bagMaterial'],
+        Shoes: ['shoeType', 'closureType'],
+        Bags: ['bagType', 'bagMaterial'],
         Fashion: ['clothingType', 'size', 'fabric'],
-        Electronics: ['electronicType', 'model', 'specifications'],
+        Electronics: ['electronicType', 'model'],
         Accessories: ['accessoryType', 'accessoryMaterial']
+    };
+
+    // Helper function to check if a field is required
+    const isFieldRequired = (fieldName) => {
+        return requiredFields.common.includes(fieldName) ||
+            requiredFields[formData.productCategory]?.includes(fieldName);
     };
 
     const handleSubmit = async (e) => {
@@ -340,7 +348,7 @@ const InputForm = () => {
                 ...prev,
                 company: '',
                 description: '',
-                images: ['', '', '', ''],
+                images: ['', '', '', '', '', '', '', ''],
                 price: '',
                 stockNumber: '',
                 manufacturedBy: '',
@@ -349,6 +357,10 @@ const InputForm = () => {
                 globalIdentifierType: 'NA', // Add this line
                 // ...rest of the reset logic
             }));
+
+            // Reset upload states
+            setUploadProgress(Array(8).fill(0));
+            setIsUploading(Array(8).fill(false));
 
         } catch (err) {
             setError(err.message);
@@ -369,6 +381,106 @@ const InputForm = () => {
         const newImages = [...formData.images];
         newImages[index] = value;
         setFormData(prev => ({ ...prev, images: newImages }));
+    };
+
+    const uploadToCloudinary = async (file, index) => {
+        // Your Cloudinary configuration
+        const CLOUDINARY_CLOUD_NAME = 'dcudiau08';
+
+        const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
+
+        // Update uploading state
+        setIsUploading(prev => {
+            const newState = [...prev];
+            newState[index] = true;
+            return newState;
+        });
+
+        // Try multiple upload presets in order of preference
+        const presets = ['watchcare_unsigned', 'ml_default'];
+
+        try {
+            for (const preset of presets) {
+                try {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('file', file);
+                    uploadFormData.append('upload_preset', preset);
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: uploadFormData,
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.secure_url) {
+                        // Success! Update the image URL in the form
+                        const newImages = [...formData.images];
+                        newImages[index] = data.secure_url;
+                        setFormData(prev => ({ ...prev, images: newImages }));
+
+                        setError(''); // Clear any previous errors
+                        console.log(`Upload successful with preset "${preset}":`, data.secure_url);
+                        return data.secure_url;
+                    } else {
+                        console.warn(`Upload failed with preset "${preset}":`, data);
+                        // Continue to next preset
+                        continue;
+                    }
+                } catch (presetError) {
+                    console.warn(`Error with preset "${preset}":`, presetError);
+                    // Continue to next preset
+                    continue;
+                }
+            }
+
+            // If all presets failed
+            throw new Error('Upload failed with all available presets. Please check your Cloudinary configuration.');
+        } catch (error) {
+            const errorMessage = (error as Error).message || 'Upload failed';
+            console.error('Upload error:', error);
+            setError(`Failed to upload image ${index + 1}: ${errorMessage}`);
+            throw error;
+        } finally {
+            // Reset uploading state
+            setIsUploading(prev => {
+                const newState = [...prev];
+                newState[index] = false;
+                return newState;
+            });
+        }
+    };
+
+    const handleFileUpload = async (event, index) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setError('Please select a valid image file');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setError('Image size should be less than 10MB');
+            return;
+        }
+
+        try {
+            await uploadToCloudinary(file, index);
+            setError(''); // Clear any previous errors on success
+        } catch (error) {
+            // Error is already handled in uploadToCloudinary
+            console.error('File upload failed:', error);
+        } finally {
+            // Reset uploading state in case it wasn't reset
+            setIsUploading(prev => {
+                const newState = [...prev];
+                newState[index] = false;
+                return newState;
+            });
+        }
     };
 
     return (
@@ -411,6 +523,11 @@ const InputForm = () => {
                     <div className="mb-10 text-center">
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">Add Product</h2>
                         <p className="text-gray-500">Fill in details to add a new product</p>
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-700">
+                                <span className="text-red-500 font-medium">*</span> indicates required fields
+                            </p>
+                        </div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
@@ -455,7 +572,9 @@ const InputForm = () => {
 
                                 {/* Existing brand, price, gender fields */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Brand</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Brand <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         name="company"
@@ -467,7 +586,9 @@ const InputForm = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Price (₹) <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="number"
                                         name="price"
@@ -485,7 +606,6 @@ const InputForm = () => {
                                         value={formData.gender}
                                         onChange={handleChange}
                                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
-                                        required
                                     >
                                         <option value="Unisex">Unisex</option>
                                         <option value="Male">Male</option>
@@ -495,25 +615,72 @@ const InputForm = () => {
                             </div>
 
                             {/* Product Images Section */}
-                            <div className="col-span-2 space-y-4">
-                                <h4 className="text-lg font-semibold">Product Images (4 URLs)</h4>
-                                <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-full space-y-4">
+                                <h4 className="text-lg font-semibold">Product Images (8 URLs or Files)</h4>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                                     {formData.images.map((url, index) => (
-                                        <input
-                                            key={index}
-                                            type="url"
-                                            value={url}
-                                            onChange={(e) => handleImageChange(index, e.target.value)}
-                                            className="w-full px-4 py-2 border rounded-lg"
-                                            placeholder={`Image URL ${index + 1}`}
-                                        />
+                                        <div key={index} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Image {index + 1}
+                                            </label>
+
+                                            {/* URL Input */}
+                                            <input
+                                                type="url"
+                                                value={url}
+                                                onChange={(e) => handleImageChange(index, e.target.value)}
+                                                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder={`Image URL ${index + 1}`}
+                                                disabled={isUploading[index]}
+                                            />
+
+                                            {/* OR Divider */}
+                                            <div className="flex items-center my-2">
+                                                <div className="flex-1 border-t border-gray-300"></div>
+                                                <span className="px-2 sm:px-3 text-gray-500 text-xs sm:text-sm">OR</span>
+                                                <div className="flex-1 border-t border-gray-300"></div>
+                                            </div>
+
+                                            {/* File Upload */}
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleFileUpload(e, index)}
+                                                    className="w-full sm:flex-1 px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    disabled={isUploading[index]}
+                                                />
+                                                {isUploading[index] && (
+                                                    <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                                                        <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                                        <span className="text-xs sm:text-sm text-blue-600">Uploading...</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Image Preview */}
+                                            {url && (
+                                                <div className="mt-3">
+                                                    <img
+                                                        src={url}
+                                                        alt={`Preview ${index + 1}`}
+                                                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-300 shadow-sm"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Description */}
                             <div className="col-span-2 space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Description <span className="text-red-500">*</span>
+                                </label>
                                 <textarea
                                     name="description"
                                     value={formData.description}
@@ -532,7 +699,9 @@ const InputForm = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                 {/* Basic Info */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Seller Name</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Seller Name <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         name="sellerName"
@@ -544,7 +713,9 @@ const InputForm = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Phone Number <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="tel"
                                         name="sellerPhone"
@@ -556,7 +727,9 @@ const InputForm = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Email <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="email"
                                         name="sellerEmail"
@@ -586,7 +759,6 @@ const InputForm = () => {
                                         value={formData.sellerAddress}
                                         onChange={handleChange}
                                         className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
                                         rows={3}
                                     />
                                 </div>
@@ -600,7 +772,6 @@ const InputForm = () => {
                                         value={formData.sellerCity}
                                         onChange={handleChange}
                                         className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
                                     />
                                 </div>
 
@@ -612,7 +783,6 @@ const InputForm = () => {
                                         value={formData.sellerState}
                                         onChange={handleChange}
                                         className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
                                     />
                                 </div>
 
@@ -624,7 +794,6 @@ const InputForm = () => {
                                         value={formData.sellerPincode}
                                         onChange={handleChange}
                                         className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
                                     />
                                 </div>
 
@@ -650,12 +819,15 @@ const InputForm = () => {
                                     <h3 className="text-lg font-semibold">Watch Specifications</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Movement Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Movement Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="movement"
                                                 value={formData.movement}
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             >
                                                 {['Quartz', 'Automatic', 'Mechanical', 'Smart'].map(option => (
                                                     <option key={option} value={option}>{option}</option>
@@ -663,12 +835,15 @@ const InputForm = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Material</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Material <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="material"
                                                 value={formData.material}
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                required
                                             >
                                                 {['Stainless Steel', 'Titanium', 'Gold', 'Rose Gold', 'Ceramic'].map(option => (
                                                     <option key={option} value={option}>{option}</option>
@@ -853,7 +1028,9 @@ const InputForm = () => {
                                     <h3 className="text-lg font-semibold">Shoe Specifications</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Shoe Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Shoe Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="shoeType"
                                                 value={formData.shoeType}
@@ -868,7 +1045,9 @@ const InputForm = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Closure Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Closure Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="closureType"
                                                 value={formData.closureType}
@@ -1021,7 +1200,9 @@ const InputForm = () => {
                                     <h3 className="text-lg font-semibold">Bag Specifications</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Bag Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Bag Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="bagType"
                                                 value={formData.bagType}
@@ -1042,7 +1223,6 @@ const InputForm = () => {
                                                 value={formData.bagClosureType}
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                required
                                             >
                                                 <option value="">Select Closure Type</option>
                                                 {[
@@ -1060,7 +1240,9 @@ const InputForm = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Material</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Material <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="bagMaterial"
                                                 value={formData.bagMaterial}
@@ -1083,7 +1265,6 @@ const InputForm = () => {
                                                 onChange={handleChange}
                                                 placeholder="Length x Width x Height"
                                                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                required
                                             />
                                         </div>
                                         <div>
@@ -1195,7 +1376,9 @@ const InputForm = () => {
                                     <h3 className="text-lg font-semibold">Fashion Specifications</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Clothing Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Clothing Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="clothingType"
                                                 value={formData.clothingType}
@@ -1210,7 +1393,9 @@ const InputForm = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Size</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Size <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="size"
                                                 value={formData.size}
@@ -1339,7 +1524,9 @@ const InputForm = () => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Fabric</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Fabric <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="fabric"
                                                 value={formData.fabric}
@@ -1373,7 +1560,9 @@ const InputForm = () => {
                                     <h3 className="text-lg font-semibold">Electronics Specifications</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Device Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Device Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="electronicType"
                                                 value={formData.electronicType}
@@ -1388,7 +1577,9 @@ const InputForm = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Model Number</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Model Number <span className="text-red-500">*</span>
+                                            </label>
                                             <input
                                                 type="text"
                                                 name="model"
@@ -1507,7 +1698,9 @@ const InputForm = () => {
                                     <h3 className="text-lg font-semibold">Accessories Specifications</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Accessory Type</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Accessory Type <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="accessoryType"
                                                 value={formData.accessoryType}
@@ -1522,7 +1715,9 @@ const InputForm = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Material</label>
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Material <span className="text-red-500">*</span>
+                                            </label>
                                             <select
                                                 name="accessoryMaterial"
                                                 value={formData.accessoryMaterial}

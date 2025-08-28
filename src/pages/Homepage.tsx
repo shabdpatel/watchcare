@@ -169,22 +169,104 @@ const Homepage = () => {
     return (
         <div className="min-h-screen bg-gray-100">
             {/* Hero Section */}
-            <div className="relative h-[60vh] md:h-[90vh] bg-black">
-                <div className="absolute inset-0">
-                    <img
-                        src="https://images.unsplash.com/photo-1523275335684-37898b6baf30"
-                        alt="Hero"
-                        className="w-full h-full object-cover opacity-60"
-                    />
+            <div className="relative min-h-[70vh] sm:min-h-[80vh] lg:min-h-[90vh] bg-gradient-to-br from-white via-gray-100 to-gray-300">
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-400/30 via-transparent to-white/20">
                 </div>
-                <div className="relative h-full flex items-center">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 md:space-y-8">
-                        <h1 className="text-3xl sm:text-5xl md:text-7xl font-light text-white uppercase tracking-wider">
-                            Timeless Elegance
-                        </h1>
-                        <p className="text-lg sm:text-xl text-gray-300 max-w-2xl tracking-wide">
-                            Discover our curated collection
-                        </p>
+                <div className="relative h-full flex items-center py-8 sm:py-12 lg:py-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                        {/* Header Text */}
+                        <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                            <h1 className="text-2xl sm:text-4xl lg:text-6xl font-light text-gray-800 uppercase tracking-wider mb-4">
+                                Discover Excellence
+                            </h1>
+                            <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
+                                Explore our curated collections of premium timepieces
+                            </p>
+                        </div>
+
+                        {/* Category Cards Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
+                            <Link
+                                to="/all_watches?category=project"
+                                className="group relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden rounded-lg shadow-2xl transform transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
+                            >
+                                <img
+                                    src="https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=600&h=800&fit=crop&crop=center"
+                                    alt="Project Watches"
+                                    loading="lazy"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col items-center justify-end p-4 sm:p-6">
+                                    <div className="text-center transform transition-transform duration-300 group-hover:-translate-y-2">
+                                        <h3 className="text-lg sm:text-xl lg:text-2xl font-light text-white uppercase tracking-wider mb-2">
+                                            Project Watches
+                                        </h3>
+                                        <p className="text-gray-200 text-xs sm:text-sm text-center leading-relaxed">
+                                            Luxury timepieces from leading brands
+                                        </p>
+                                        <div className="mt-3 sm:mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <span className="inline-block bg-white/10 backdrop-blur-sm text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium border border-white/20">
+                                                Explore Collection
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+
+                            <Link
+                                to="/all_watches?category=vintage"
+                                className="group relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden rounded-lg shadow-2xl transform transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
+                            >
+                                <img
+                                    src="https://res.cloudinary.com/dyq1mioyr/image/upload/v1756229850/close-up-pocket-watches-table_1048944-10499918_tkgfmg.webp"
+                                    alt="Vintage Watches"
+                                    loading="lazy"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col items-center justify-end p-4 sm:p-6">
+                                    <div className="text-center transform transition-transform duration-300 group-hover:-translate-y-2">
+                                        <h3 className="text-lg sm:text-xl lg:text-2xl font-light text-white uppercase tracking-wider mb-2">
+                                            Vintage
+                                        </h3>
+                                        <p className="text-gray-200 text-xs sm:text-sm text-center leading-relaxed">
+                                            Premium vintage collection
+                                        </p>
+                                        <div className="mt-3 sm:mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <span className="inline-block bg-white/10 backdrop-blur-sm text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium border border-white/20">
+                                                Explore Collection
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+
+                            <Link
+                                to="/all_watches?category=warranty"
+                                className="group relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden rounded-lg shadow-2xl transform transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl sm:col-span-2 lg:col-span-1"
+                            >
+                                <img
+                                    src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=1000&q=80"
+                                    alt="Under Warranty - Premium Protection"
+                                    loading="lazy"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col items-center justify-end p-4 sm:p-6">
+                                    <div className="text-center transform transition-transform duration-300 group-hover:-translate-y-2">
+                                        <h3 className="text-lg sm:text-xl lg:text-2xl font-light text-white uppercase tracking-wider mb-2">
+                                            Under Warranty
+                                        </h3>
+                                        <p className="text-gray-200 text-xs sm:text-sm text-center leading-relaxed">
+                                            High-end protected accessories
+                                        </p>
+                                        <div className="mt-3 sm:mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <span className="inline-block bg-white/10 backdrop-blur-sm text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium border border-white/20">
+                                                Explore Collection
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -324,7 +406,7 @@ const Homepage = () => {
                             <p className="text-gray-600">Timeless classics from renowned watchmakers</p>
                         </div>
                         <Link
-                            to="/all_watches"
+                            to="/all_watches?category=vintage"
                             className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
                         >
                             View All <ArrowRightIcon className="w-4 h-4" />
@@ -360,7 +442,7 @@ const Homepage = () => {
                             <p className="text-gray-600">Products with extended warranty coverage</p>
                         </div>
                         <Link
-                            to="/all_watches"
+                            to="/all_watches?category=warranty"
                             className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-600 hover:text-gray-900"
                         >
                             View All <ArrowRightIcon className="w-4 h-4" />
