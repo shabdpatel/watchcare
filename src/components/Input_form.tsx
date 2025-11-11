@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { collection, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../pages/firebase';
 import { useAuth } from './AuthContext';
 
@@ -100,15 +100,15 @@ const InputForm = () => {
         UVProtection: '',
 
         // Seller Information (New Fields)
-        sellerName: '',
-        sellerPhone: '',
-        sellerEmail: '',
-        sellerAddress: '',
-        sellerCity: '',
-        sellerState: '',
-        sellerPincode: '',
-        sellerGSTIN: '',
-        sellerPAN: '',
+    sellerName: '',
+    sellerPhone: '',
+    sellerEmail: '', // will be auto-filled from auth
+    sellerAddress: '',
+    sellerCity: '',
+    sellerState: '',
+    sellerPincode: '',
+    sellerGSTIN: '',
+    sellerPAN: '',
 
         // Add these new warranty fields after the existing warranty field
         warrantyDuration: '',
@@ -155,7 +155,44 @@ const InputForm = () => {
             requiredFields[formData.productCategory]?.includes(fieldName);
     };
 
-    const handleSubmit = async (e) => {
+    // Prefill seller info if user has sold before
+    useEffect(() => {
+        const prefillSellerInfo = async () => {
+            if (!currentUser) return;
+            try {
+                const userRef = doc(db, 'users', currentUser.email);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    const profile = data.sellerProfile;
+                    if (profile) {
+                        setFormData(prev => ({
+                            ...prev,
+                            sellerName: profile.Name || prev.sellerName,
+                            sellerPhone: profile.Phone || prev.sellerPhone,
+                            sellerEmail: currentUser.email, // always override with auth email
+                            sellerAddress: profile.Address || prev.sellerAddress,
+                            sellerCity: profile.City || prev.sellerCity,
+                            sellerState: profile.State || prev.sellerState,
+                            sellerPincode: profile.Pincode || prev.sellerPincode,
+                            sellerGSTIN: profile.GSTIN || prev.sellerGSTIN,
+                            sellerPAN: profile.PAN || prev.sellerPAN,
+                        }));
+                    } else {
+                        // Even if no profile, ensure email field is set
+                        setFormData(prev => ({ ...prev, sellerEmail: currentUser.email }));
+                    }
+                } else {
+                    setFormData(prev => ({ ...prev, sellerEmail: currentUser.email }));
+                }
+            } catch (err) {
+                console.warn('Could not prefill seller profile', err);
+            }
+        };
+        prefillSellerInfo();
+    }, [currentUser]);
+
+    const handleSubmit = async (e: any) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -182,6 +219,8 @@ const InputForm = () => {
                 ImportedBy: formData.importedBy,
                 GlobalIdentifierValue: formData.globalIdentifierValue,
                 createdAt: new Date(),
+                // Attach seller email at top-level for easier filtering
+                email: currentUser.email,
 
                 // Add seller information
                 Seller: {
@@ -344,6 +383,27 @@ const InputForm = () => {
 
             await addDoc(collection(db, formData.productCategory), productData);
 
+            // Upsert seller profile for future prefills
+            try {
+                const userRef = doc(db, 'users', currentUser.email);
+                await setDoc(userRef, {
+                    sellerProfile: {
+                        Name: formData.sellerName,
+                        Phone: formData.sellerPhone,
+                        Email: currentUser.email,
+                        Address: formData.sellerAddress,
+                        City: formData.sellerCity,
+                        State: formData.sellerState,
+                        Pincode: formData.sellerPincode,
+                        GSTIN: formData.sellerGSTIN,
+                        PAN: formData.sellerPAN,
+                        updatedAt: new Date()
+                    }
+                }, { merge: true });
+            } catch (profileErr) {
+                console.warn('Failed to update seller profile', profileErr);
+            }
+
             setFormData(prev => ({
                 ...prev,
                 company: '',
@@ -369,7 +429,7 @@ const InputForm = () => {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: any) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -733,9 +793,10 @@ const InputForm = () => {
                                     <input
                                         type="email"
                                         name="sellerEmail"
-                                        value={formData.sellerEmail}
+                                        value={formData.sellerEmail || currentUser?.email || ''}
                                         onChange={handleChange}
-                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        readOnly
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                                         required
                                     />
                                 </div>

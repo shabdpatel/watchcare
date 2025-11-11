@@ -93,7 +93,8 @@ const Sells = () => {
                         id: doc.id,
                         category,
                         ...doc.data(),
-                        rating: Math.floor(Math.random() * 5) + 1,
+                        // Rating between 3.5 and 5.0
+                        rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
                         reviews: Math.floor(Math.random() * 100),
                     }));
 

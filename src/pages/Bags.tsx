@@ -66,7 +66,8 @@ const Electronics = () => {
                 const electronicsItems = querySnapshot.docs.map((doc) => ({
                     id: doc.id,
                     collectionName: "Electronics",
-                    rating: Math.floor(Math.random() * 5) + 1,
+                    // Rating between 3.5 and 5.0
+                    rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
                     reviews: Math.floor(Math.random() * 100),
                     ...doc.data(),
                     Image: doc.data().images?.[0] || '',
@@ -401,7 +402,8 @@ const Bags = () => {
                 const bagsItems = querySnapshot.docs.map((doc) => ({
                     id: doc.id,
                     collectionName: "Bags",
-                    rating: Math.floor(Math.random() * 5) + 1,
+                    // Rating between 3.5 and 5.0
+                    rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
                     reviews: Math.floor(Math.random() * 100),
                     ...doc.data(),
                     Image: doc.data().images?.[0] || '',

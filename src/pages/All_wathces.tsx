@@ -74,7 +74,8 @@ const AllWatches = () => {
                 const watches = querySnapshot.docs.map((doc) => ({
                     id: doc.id,
                     collectionName: "Watches",
-                    rating: Math.floor(Math.random() * 5) + 1,
+                    // Rating between 3.5 and 5.0
+                    rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
                     reviews: Math.floor(Math.random() * 100),
                     ...doc.data(),
                     Image: doc.data().images?.[0] || '',
@@ -163,8 +164,11 @@ const AllWatches = () => {
 
             // Project watches filtering (by specific email addresses)
             if (selectedCategory === 'project') {
-                const projectEmails = ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'];
-                if (!watch.email || !projectEmails.includes(watch.email)) {
+                // Only show watches uploaded by this single project email
+                const allowedEmail = 'prameetsw@gmail.com';
+                // Support both top-level email and nested Seller.Email (legacy docs)
+                const watchEmail = (watch.email || watch.Seller?.Email || '').toLowerCase();
+                if (watchEmail !== allowedEmail.toLowerCase()) {
                     return false;
                 }
             }

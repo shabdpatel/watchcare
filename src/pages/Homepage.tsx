@@ -46,7 +46,8 @@ const Homepage = () => {
                         return {
                             id: doc.id,
                             collectionName,
-                            rating: Math.floor(Math.random() * 5) + 1,
+                            // Rating between 3.5 and 5.0 (rounded to one decimal)
+                            rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
                             reviews: Math.floor(Math.random() * 100),
                             // Handle different date formats and provide a fallback
                             dateAdded: data.dateAdded ?
