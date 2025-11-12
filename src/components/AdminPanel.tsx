@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../pages/firebase';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
 import {
     UsersIcon, ShoppingBagIcon, CurrencyRupeeIcon,
-    ExclamationCircleIcon, TruckIcon, ChartBarIcon,
+    ExclamationCircleIcon, ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -14,13 +15,19 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
+import { NegotiationRequest } from '../utils/negotiation';
 
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState('users');
-    const [users, setUsers] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [orders, setOrders] = useState([]);
+    const [users, setUsers] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
+    const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    type NegotiationWithProduct = NegotiationRequest & {
+        productDoc?: { id: string; collection?: string; Image?: string; images?: string[]; name?: string; Brand?: string; Company?: string; Price?: number };
+        productLink?: string;
+    };
+    const [negotiations, setNegotiations] = useState<NegotiationWithProduct[]>([]);
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalProducts: 0,
@@ -29,9 +36,17 @@ const AdminPanel = () => {
         totalIssues: 0,
         activeSellers: 0
     });
-    const [issues, setIssues] = useState([]);
-    const [sellers, setSellers] = useState([]);
-    const [analytics, setAnalytics] = useState({
+    const [_issues, _setIssues] = useState<Array<Record<string, unknown>>>([]);
+    const [_sellers, _setSellers] = useState<Array<Record<string, unknown>>>([]);
+    type Analytics = {
+        revenueByMonth: Array<{ month: string; amount: number; formatted: string }>;
+        categoryDistribution: Array<{ name: string; value: number }>;
+        sellerPerformance: Array<{ name: string | undefined; revenue: number; products: number }>;
+        userGrowth: Array<{ month: string; users: number }>;
+        topProducts: Array<unknown>;
+        orderTrends: Array<{ month: string; orders: number; revenue: number }>;
+    };
+    const [analytics, setAnalytics] = useState<Analytics>({
         revenueByMonth: [],
         categoryDistribution: [],
         sellerPerformance: [],
@@ -45,55 +60,99 @@ const AdminPanel = () => {
         productName: '',
         collection: ''
     });
-    const { currentUser } = useAuth();
+    const { currentUser } = useAuth() as { currentUser: { email?: string } | null };
     const navigate = useNavigate();
 
-    const ADMIN_EMAILS = ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'];
+    // Static admin emails; memoize so dependency array remains stable
+    const ADMIN_EMAILS = useMemo(() => [
+        'shabdpatel0@gmail.com',
+        '22bph028@nith.ac.in',
+        'prameetsw@gmail.com',
+        'shabdpatel87@gmail.com'
+    ], []);
 
+    
+
+    // Subscribe to negotiations and enrich with product info
     useEffect(() => {
-        if (!ADMIN_EMAILS.includes(currentUser?.email || '')) {
-            navigate('/');
-            return;
-        }
-        if (activeTab === 'overview') {
-            fetchStats();
-        } else {
-            fetchData();
-        }
-    }, [currentUser, activeTab]);
+        const unsub = onSnapshot(collection(db, 'negotiations'), async (snap) => {
+            const baseItems: NegotiationWithProduct[] = snap.docs.map(d => {
+                const data = d.data() as Partial<NegotiationRequest>;
+                return {
+                    id: d.id,
+                    productId: String(data.productId || ''),
+                    productCollection: data.productCollection as string | undefined,
+                    buyerId: String(data.buyerId || ''),
+                    sellerId: data.sellerId as string | undefined,
+                    originalPrice: Number(data.originalPrice || 0),
+                    proposedPrice: Number(data.proposedPrice || 0),
+                    approvedPrice: typeof data.approvedPrice === 'number' ? data.approvedPrice : undefined,
+                    status: (data.status as NegotiationRequest['status']) || 'pending',
+                    createdAt: new Date(),
+                };
+            });
 
-    const fetchData = async () => {
+            // Fetch product docs in parallel, with simple cache per collection/id
+            const cache = new Map<string, any>();
+            const enriched = await Promise.all(baseItems.map(async (n) => {
+                const col = n.productCollection;
+                const pid = n.productId;
+                if (!col || !pid) return n;
+                const key = `${col}/${pid}`;
+                try {
+                    let prod = cache.get(key);
+                    if (!prod) {
+                        const snap = await getDoc(doc(db, col, pid));
+                        prod = snap.exists() ? { id: pid, collection: col, ...snap.data() } : null;
+                        cache.set(key, prod);
+                    }
+                    if (prod) {
+                        const productLink = `/details/${String(col).toLowerCase()}/${pid}`;
+                        return { ...n, productDoc: prod, productLink };
+                    }
+                } catch (e) {
+                    console.warn('Failed to load product for negotiation', key, e);
+                }
+                return n;
+            }));
+
+            setNegotiations(enriched);
+        });
+        return () => unsub();
+    }, []);
+
+    interface ProductDoc { id: string; collection: string; stock: number; Price?: number; Stock?: number; name?: string; Brand?: string; Company?: string; Description?: string; originalPrice?: number; featured?: boolean; Image?: string; images?: string[]; Seller?: Record<string, unknown>; Movement?: string; Material?: string; Glass?: string; WaterResistance?: string; shoeType?: string; bagType?: string; clothingType?: string; electronicType?: string; CountryOfOrigin?: string; CollectionYear?: string; Warranty?: { Duration?: string; Provider?: string; Type?: string; Status?: string }; warranty?: string; [key: string]: unknown }
+    interface UserDoc { id: string; email?: string; isSeller?: boolean; personalInfo?: { firstName?: string; lastName?: string }; contact?: { phoneNumber?: string }; addresses?: { shipping?: Record<string, unknown>; billing?: Record<string, unknown> & { sameAsShipping?: boolean } }; preferences?: { newsletter?: boolean; smsNotifications?: boolean; emailNotifications?: boolean; language?: string; currency?: string }; socialMedia?: { facebook?: string; twitter?: string; instagram?: string }; lastLogin?: { toDate?: () => Date }; createdAt?: { toDate?: () => Date }; [key: string]: unknown }
+    interface OrderDoc { id: string; status?: string; orderDate?: { toDate?: () => Date }; createdAt?: { toDate?: () => Date }; amount?: number; total?: number; items?: Array<Record<string, unknown>>; shippingAddress?: { name?: string; address?: string; city?: string; state?: string; pincode?: string }; paymentMethod?: string; paymentId?: string; expectedDelivery?: string; product?: { Image?: string; Company?: string; Model?: string }; userId?: string; shippingFee?: number; [key: string]: unknown }
+
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             switch (activeTab) {
                 case 'users':
                     const usersSnapshot = await getDocs(collection(db, 'users'));
-                    setUsers(usersSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    })));
+                    const userList: UserDoc[] = usersSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setUsers(userList);
                     break;
                 case 'products':
-                    let allProducts = [];
+                    let allProducts: ProductDoc[] = [];
                     const collections = ['Watches', 'Fashion', 'Electronics', 'Accessories', 'Bags', 'Shoes'];
                     for (const col of collections) {
                         const snapshot = await getDocs(collection(db, col));
-                        const products = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            collection: col,
-                            stock: doc.data().Stock || doc.data().stock || 0, // Add this line to handle different field names
-                            ...doc.data()
-                        }));
+                        const products: ProductDoc[] = snapshot.docs.map(d => {
+                            const data = d.data() as Record<string, unknown>;
+                            const stockRaw = (data['Stock'] ?? data['stock']);
+                            const stock = typeof stockRaw === 'number' ? stockRaw : Number(stockRaw || 0);
+                            return { id: d.id, collection: col, stock, ...data };
+                        });
                         allProducts = [...allProducts, ...products];
                     }
                     setProducts(allProducts);
                     break;
                 case 'orders':
                     const ordersSnapshot = await getDocs(collection(db, 'orders'));
-                    setOrders(ordersSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    })));
+                    const orderList: OrderDoc[] = ordersSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setOrders(orderList);
                     break;
             }
         } catch (error) {
@@ -102,8 +161,9 @@ const AdminPanel = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeTab]);
 
+    // Fetch overview analytics
     const fetchStats = async () => {
         try {
             let totalProducts = 0;
@@ -123,11 +183,10 @@ const AdminPanel = () => {
             });
 
             let totalRevenue = 0;
-            const monthlyRevenue = {};
-            const categoryStats = {};
-            const sellerStats = {};
-            const userGrowthData = [];
-            const orderTrendsData = [];
+            const monthlyRevenue: Record<string, number> = {};
+            const categoryStats: Record<string, number> = {};
+            const userGrowthData: Array<{ month: string; users: number }> = [];
+            const orderTrendsData: Array<{ month: string; orders: number; revenue: number }> = [];
 
             // Process orders
             ordersSnap.docs.forEach(doc => {
@@ -251,7 +310,21 @@ const AdminPanel = () => {
         }
     };
 
-    const handleDeleteProduct = async (productId, collection, productName) => {
+    // Unified effect to load data based on active tab
+    useEffect(() => {
+        if (!currentUser?.email) return;
+        if (!ADMIN_EMAILS.includes(currentUser.email)) {
+            navigate('/');
+            return;
+        }
+        if (activeTab === 'overview') {
+            void fetchStats();
+        } else {
+            void fetchData();
+        }
+    }, [currentUser?.email, activeTab, navigate, fetchData, ADMIN_EMAILS]);
+
+    const handleDeleteProduct = async (productId: string, collection: string, productName?: string) => {
         setDeleteConfirmation({
             isOpen: true,
             productId,
@@ -272,46 +345,14 @@ const AdminPanel = () => {
         }
     };
 
-    const handleProductClick = (product) => {
+    const handleProductClick = (product: { id: string; collection: string }) => {
         const route = product.collection === 'Watches'
             ? '/all_watches'
             : `/details/${product.collection.toLowerCase()}/${product.id}`;
         navigate(route);
     };
 
-    const handleUpdateStatus = async (orderId) => {
-        try {
-            const orderRef = doc(db, 'orders', orderId);
-            // Update status based on current status
-            const order = orders.find(o => o.id === orderId);
-            let newStatus = 'pending';
-
-            switch (order?.status?.toLowerCase()) {
-                case 'pending':
-                    newStatus = 'processing';
-                    break;
-                case 'processing':
-                    newStatus = 'shipped';
-                    break;
-                case 'shipped':
-                    newStatus = 'delivered';
-                    break;
-                case 'delivered':
-                    return; // No further status update needed
-                default:
-                    newStatus = 'pending';
-            }
-
-            await updateDoc(orderRef, {
-                status: newStatus
-            });
-            toast.success(`Order status updated to ${newStatus}`);
-            fetchData();
-        } catch (error) {
-            console.error('Error updating order status:', error);
-            toast.error('Failed to update order status');
-        }
-    };
+    // NOTE: Inline status update menu handles order status updates; dedicated handler removed to avoid unused warning
 
     // Add new state variables for search and filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -332,7 +373,7 @@ const AdminPanel = () => {
     });
 
     // Filter functions
-    const filterProducts = (products) => {
+    const filterProducts = (products: any[]) => {
         return products.filter(product => {
             const matchesSearch = (
                 (product.name || product.Brand || product.Company || '')
@@ -344,23 +385,25 @@ const AdminPanel = () => {
             const matchesCategory = filters.products.category === 'all' ||
                 product.collection === filters.products.category;
 
+            const stockVal = (product.Stock ?? (product as any).stock ?? 0) as number;
             const matchesStock = filters.products.stock === 'all' || (
-                filters.products.stock === 'inStock' ? (product.Stock > 0) :
-                    filters.products.stock === 'lowStock' ? (product.Stock <= 10 && product.Stock > 0) :
-                        product.Stock === 0
+                filters.products.stock === 'inStock' ? (stockVal > 0) :
+                    filters.products.stock === 'lowStock' ? (stockVal <= 10 && stockVal > 0) :
+                        stockVal === 0
             );
 
+            const priceVal = (product.Price ?? 0) as number;
             const matchesPriceRange = filters.products.priceRange === 'all' || (
-                filters.products.priceRange === 'under1000' ? product.Price < 1000 :
-                    filters.products.priceRange === '1000to5000' ? (product.Price >= 1000 && product.Price <= 5000) :
-                        product.Price > 5000
+                filters.products.priceRange === 'under1000' ? priceVal < 1000 :
+                    filters.products.priceRange === '1000to5000' ? (priceVal >= 1000 && priceVal <= 5000) :
+                        priceVal > 5000
             );
 
             return matchesSearch && matchesCategory && matchesStock && matchesPriceRange;
         });
     };
 
-    const filterOrders = (orders) => {
+    const filterOrders = (orders: any[]) => {
         return orders.filter(order => {
             const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 order.shippingAddress?.name?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -380,11 +423,12 @@ const AdminPanel = () => {
         });
     };
 
-    const filterUsers = (users) => {
+    const filterUsers = (users: any[]) => {
         return users.filter(user => {
-            const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.personalInfo?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.personalInfo?.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+            const email = user.email || '';
+            const matchesSearch = email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (user.personalInfo?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (user.personalInfo?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase());
 
             // Determine if user is active based on last login
             const isUserActive = user.lastLogin &&
@@ -404,20 +448,20 @@ const AdminPanel = () => {
     };
 
     // Helper functions for date filtering
-    const isToday = (date) => {
+    const isToday = (date: Date | undefined) => {
         if (!date) return false;
         const today = new Date();
         return date.toDateString() === today.toDateString();
     };
 
-    const isThisWeek = (date) => {
+    const isThisWeek = (date: Date | undefined) => {
         if (!date) return false;
         const today = new Date();
         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
         return date >= weekAgo;
     };
 
-    const isThisMonth = (date) => {
+    const isThisMonth = (date: Date | undefined) => {
         if (!date) return false;
         const today = new Date();
         return date.getMonth() === today.getMonth() &&
@@ -585,7 +629,7 @@ const AdminPanel = () => {
                 </div>
 
                 {/* Active Filters Display */}
-                {(searchTerm || Object.values(filters[activeTab]).some(value => value !== 'all')) && (
+                {(searchTerm || Object.values(filters[activeTab as keyof typeof filters]).some(value => value !== 'all')) && (
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                         <span className="text-sm text-gray-500">Active filters:</span>
                         {searchTerm && (
@@ -599,14 +643,14 @@ const AdminPanel = () => {
                                 </button>
                             </span>
                         )}
-                        {Object.entries(filters[activeTab]).map(([key, value]) => (
+                        {Object.entries(filters[activeTab as keyof typeof filters]).map(([key, value]) => (
                             value !== 'all' && (
                                 <span key={key} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
                                     {key}: {value}
                                     <button
                                         onClick={() => setFilters(prev => ({
                                             ...prev,
-                                            [activeTab]: { ...prev[activeTab], [key]: 'all' }
+                                            [activeTab]: { ...(prev as any)[activeTab], [key]: 'all' }
                                         }))}
                                         className="ml-2 text-gray-600 hover:text-gray-800"
                                     >
@@ -750,6 +794,16 @@ const AdminPanel = () => {
                             <CurrencyRupeeIcon className="w-5 h-5 mr-2" />
                             Orders
                         </button>
+                        <button
+                            onClick={() => setActiveTab('negotiations')}
+                            className={`flex items-center px-4 py-2 rounded-lg ${activeTab === 'negotiations'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            <CurrencyRupeeIcon className="w-5 h-5 mr-2" />
+                            Negotiations
+                        </button>
                     </div>
                 </div>
 
@@ -813,7 +867,7 @@ const AdminPanel = () => {
                                                             outerRadius={80}
                                                             label
                                                         >
-                                                            {analytics.categoryDistribution.map((entry, index) => (
+                                                            {analytics.categoryDistribution.map((_, index) => (
                                                                 <Cell key={`cell-${index}`} fill={['#3B82F6', '#10B981', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6'][index % 6]} />
                                                             ))}
                                                         </Pie>
@@ -841,6 +895,117 @@ const AdminPanel = () => {
                                         </div>
                                     </div>
                                 </>
+                            )}
+
+                            {/* Negotiations Tab */}
+                            {activeTab === 'negotiations' && (
+                                <div className="p-4">
+                                    <h3 className="text-lg font-medium mb-4">Price Negotiation Requests</h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposed</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                    <th className="px-4 py-2"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {negotiations.map((n) => (
+                                                    <tr key={n.id}>
+                                                        <td className="px-4 py-2 text-sm">{n.buyerId}</td>
+                                                        <td className="px-4 py-2 text-sm">
+                                                            {n.productDoc ? (
+                                                                <a
+                                                                    href={n.productLink}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-3 group"
+                                                                >
+                                                                    <div className="h-12 w-12 rounded border border-gray-200 overflow-hidden bg-gray-50 flex-shrink-0">
+                                                                        {n.productDoc.Image || (Array.isArray(n.productDoc.images) && n.productDoc.images[0]) ? (
+                                                                            <img
+                                                                                src={n.productDoc.Image || (Array.isArray(n.productDoc.images) ? n.productDoc.images[0] : '')}
+                                                                                alt={String(n.productDoc.name || n.productDoc.Brand || n.productDoc.Company || 'Product')}
+                                                                                className="h-full w-full object-cover"
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">No Img</div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-xs font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                                                            {n.productDoc.name || n.productDoc.Brand || n.productDoc.Company || `${n.productCollection}/${n.productId}`}
+                                                                        </p>
+                                                                        <p className="text-[10px] text-gray-500 truncate">{n.productCollection} • ID: {n.productId}</p>
+                                                                        {typeof n.productDoc.Price === 'number' && (
+                                                                            <p className="text-[11px] text-gray-700">Base: ₹{n.productDoc.Price.toLocaleString()}</p>
+                                                                        )}
+                                                                    </div>
+                                                                </a>
+                                                            ) : (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs text-gray-500">{n.productCollection}/{n.productId}</span>
+                                                                    <span className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-[10px]">Product unavailable</span>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm">₹{n.originalPrice}</td>
+                                                        <td className="px-4 py-2 text-sm font-medium">₹{n.proposedPrice}</td>
+                                                        <td className="px-4 py-2 text-sm">
+                                                            <span className={`px-2 py-1 rounded text-xs ${n.status === 'approved' ? 'bg-green-100 text-green-700' : n.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                                {n.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm flex gap-2">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await updateDoc(doc(db, 'negotiations', n.id), {
+                                                                            status: 'approved',
+                                                                            approvedPrice: n.proposedPrice,
+                                                                            approvedAt: new Date(),
+                                                                            approvedBy: currentUser?.email || 'admin'
+                                                                        });
+                                                                        toast.success('Request approved');
+                                                                    } catch (e) {
+                                                                        console.error(e);
+                                                                        toast.error('Failed to approve');
+                                                                    }
+                                                                }}
+                                                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                                                                disabled={n.status !== 'pending'}
+                                                            >Approve</button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await updateDoc(doc(db, 'negotiations', n.id), {
+                                                                            status: 'rejected',
+                                                                            rejectedAt: new Date(),
+                                                                            approvedBy: currentUser?.email || 'admin'
+                                                                        });
+                                                                        toast.info('Request rejected');
+                                                                    } catch (e) {
+                                                                        console.error(e);
+                                                                        toast.error('Failed to reject');
+                                                                    }
+                                                                }}
+                                                                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                                                disabled={n.status !== 'pending'}
+                                                            >Reject</button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {negotiations.length === 0 && (
+                                            <p className="text-sm text-gray-500 p-4">No negotiation requests yet.</p>
+                                        )}
+                                    </div>
+                                </div>
                             )}
 
                             {/* Products Section */}
@@ -1205,12 +1370,12 @@ const AdminPanel = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 bg-white">
-                                            {filterUsers(users).map(user => (
+                                            {filterUsers(users as UserDoc[]).map(user => (
                                                 <tr key={user.id} className="hover:bg-gray-50">
                                                     <td className="px-4 sm:px-6 py-4">
                                                         <div className="flex items-start sm:items-center gap-3">
                                                             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                                {user.personalInfo?.firstName?.[0] || user.email[0].toUpperCase()}
+                                                                {user.personalInfo?.firstName?.[0] || (user.email ? user.email[0].toUpperCase() : '?')}
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <div className="text-sm sm:text-base font-medium text-gray-900 truncate">

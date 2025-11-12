@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 class ErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -26,9 +25,9 @@ class ErrorBoundary extends React.Component<
                     <div className="max-w-md w-full space-y-8 text-center">
                         <h2 className="text-3xl font-extrabold text-gray-900">Something went wrong</h2>
                         <p className="mt-2 text-gray-600">We apologize for the inconvenience</p>
-                        <Link to="/" className="text-rose-600 hover:text-rose-500">
+                        <a href="/" className="text-rose-600 hover:text-rose-500">
                             Return to home page
-                        </Link>
+                        </a>
                     </div>
                 </div>
             );

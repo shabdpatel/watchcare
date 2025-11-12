@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { doc, getDoc, query, collection, where, getDocs, limit, setDoc } from "firebase/firestore";
 import { db } from "../pages/firebase";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     HeartIcon,
     ShoppingBagIcon,
@@ -16,6 +16,7 @@ import { useAuth } from '../components/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import CheckoutFlow from './CheckoutFlow';
+import { submitNegotiationRequest, listenNegotiation, getDisplayPrice } from '../utils/negotiation';
 
 // Define interfaces
 interface ProductData {
@@ -29,7 +30,8 @@ interface ProductData {
     Image?: string;
     images?: string[];
     rating?: number;
-    [key: string]: any; // For dynamic specification fields
+    // Allow additional dynamic fields without using any
+    [key: string]: unknown;
 }
 
 interface ShippingAddress {
@@ -219,10 +221,15 @@ const Detail = () => {
     const [relatedWatches, setRelatedWatches] = useState<ProductData[]>([]);
     const [similarProducts, setSimilarProducts] = useState<ProductData[]>([]);
     const { addToCart } = useCart();
-    const { currentUser } = useAuth();
+    const { currentUser } = useAuth() as { currentUser: { email: string } | null };
     const navigate = useNavigate();
     const [showAddressModal, setShowAddressModal] = useState<boolean>(false);
     const [showCheckoutModal, setShowCheckoutModal] = useState<boolean>(false);
+    const [showNegotiateModal, setShowNegotiateModal] = useState<boolean>(false); // used in modal open/close
+    const [proposedPrice, setProposedPrice] = useState<string>(''); // controlled input
+    const [negStatus, setNegStatus] = useState<NegotiationStatus | 'none'>('none'); // negotiation status display
+    const [approvedPrice, setApprovedPrice] = useState<number | undefined>(undefined); // approved price rendering
+    const [submittingNeg, setSubmittingNeg] = useState<boolean>(false); // loading state for submit
     const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
         name: '',
         address: '',
@@ -302,6 +309,28 @@ const Detail = () => {
         fetchSimilarProducts();
     }, [watch, collectionName, id]);
 
+    // Listen for negotiation updates for this user and product
+    const prevStatusRef = useRef<NegotiationStatus | 'none'>('none');
+    useEffect(() => {
+        if (!currentUser?.email || !watch?.id) return;
+        const unsub = listenNegotiation(watch.id, currentUser.email, (neg) => {
+            if (!neg) {
+                setNegStatus('none');
+                setApprovedPrice(undefined);
+                return;
+            }
+            const newStatus = neg.status as NegotiationStatus;
+            const prev = prevStatusRef.current;
+            setNegStatus(newStatus);
+            setApprovedPrice(neg.approvedPrice);
+            if (prev === 'pending' && newStatus === 'approved') {
+                toast.success('Your negotiated price was approved and applied!');
+            }
+            prevStatusRef.current = newStatus;
+        });
+        return () => unsub && unsub();
+    }, [currentUser?.email, watch?.id]);
+
 
     const toggleWishlist = (watchId: string) => {
         setWishlist(prev =>
@@ -314,10 +343,11 @@ const Detail = () => {
     // Fix type for handleAddToCart
     const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>, item: ProductData) => {
         e.preventDefault();
+        const priceToUse = getDisplayPrice(item.Price, approvedPrice);
         addToCart({
             id: item.id,
             name: item.Company,
-            price: item.Price,
+            price: priceToUse,
             image: item.Image || item.images?.[0] || '',
             quantity: 1,
             category: collectionName
@@ -325,7 +355,7 @@ const Detail = () => {
     };
 
     // Fix buttons accessibility
-    const renderRating = (rating: number): JSX.Element[] => (
+    const renderRating = (rating: number) => (
         [...Array(5)].map((_, i) => (
             <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`} role="img" aria-label={`${i < rating ? 'filled' : 'empty'} star`}>
                 ★
@@ -334,12 +364,21 @@ const Detail = () => {
     );
 
     // Update the renderSpecifications function to handle nested properties
-    const renderSpecifications = (product: ProductData, category: string): JSX.Element | null => {
+    const renderSpecifications = (product: ProductData, category: string) => {
         const specs = productSpecs[category as keyof typeof productSpecs];
         if (!specs) return null;
 
-        const getNestedValue = (obj: any, path: string) => {
-            return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+        const getNestedValue = (obj: unknown, path: string) => {
+            const parts = path.split('.');
+            let acc: unknown = obj;
+            for (const part of parts) {
+                if (acc && typeof acc === 'object' && part in (acc as Record<string, unknown>)) {
+                    acc = (acc as Record<string, unknown>)[part];
+                } else {
+                    return undefined;
+                }
+            }
+            return acc;
         };
 
         return (
@@ -357,7 +396,7 @@ const Detail = () => {
                                         <div key={key}>
                                             <p className="text-sm text-gray-500">{label}</p>
                                             <p className="font-medium">
-                                                {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
+                                                {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
                                             </p>
                                         </div>
                                     );
@@ -389,19 +428,20 @@ const Detail = () => {
             }
 
             // Initialize Razorpay order
+            const displayPrice = getDisplayPrice(product.Price, approvedPrice);
             const options = {
                 key: 'rzp_test_T5M2JyEgw9JAXJ',
-                amount: product.Price * 100, // Amount in paise
+                amount: displayPrice * 100, // Amount in paise
                 currency: 'INR',
                 name: 'Watch Store',
                 description: `Purchase of ${product.Company} ${product.Model}`,
                 image: product.Image || product.images?.[0],
-                handler: async (response) => {
+                handler: async (response: { razorpay_payment_id: string }) => {
                     // Handle successful payment
                     const orderData = {
                         productId: product.id,
                         userId: currentUser.email,
-                        amount: product.Price,
+                        amount: displayPrice,
                         paymentId: response.razorpay_payment_id,
                         shippingAddress,
                         status: 'paid',
@@ -424,7 +464,9 @@ const Detail = () => {
                 }
             };
 
-            const razorpayInstance = new window.Razorpay(options);
+            type RazorpayInstance = { open: () => void };
+            const RazorpayCtor: new (options: unknown) => RazorpayInstance = (window as unknown as { Razorpay: new (options: unknown) => RazorpayInstance }).Razorpay;
+            const razorpayInstance = new RazorpayCtor(options);
             razorpayInstance.open();
 
         } catch (error) {
@@ -460,6 +502,46 @@ const Detail = () => {
 
         fetchUserAddress();
     }, [currentUser, showAddressModal]);
+
+    // Submit negotiation
+    const submitNegotiation = async () => {
+        if (!currentUser?.email || !watch) {
+            toast.error('Please login to negotiate');
+            navigate('/login');
+            return;
+        }
+        const base = watch.Price;
+        const value = Number(proposedPrice);
+        if (!value || isNaN(value)) {
+            toast.error('Enter a valid number');
+            return;
+        }
+        if (value >= base) {
+            toast.error('Proposed price must be less than the current price');
+            return;
+        }
+        if (value <= 0) {
+            toast.error('Proposed price must be positive');
+            return;
+        }
+        try {
+            setSubmittingNeg(true);
+            await submitNegotiationRequest({
+                productId: watch.id,
+                productCollection: collectionName,
+                buyerId: currentUser.email,
+                originalPrice: base,
+                proposedPrice: value,
+            });
+            toast.success('Negotiation request sent to seller');
+            setShowNegotiateModal(false);
+        } catch (e) {
+            console.error(e);
+            toast.error('Failed to submit request');
+        } finally {
+            setSubmittingNeg(false);
+        }
+    };
 
     // Update the AddressModal component
     const AddressModal = () => (
@@ -570,6 +652,144 @@ const Detail = () => {
         </div>
     );
 
+    // Improved Negotiate Price Modal (responsive, accessible, professional)
+    const NegotiateModal = () => {
+        const dialogRef = useRef<HTMLDivElement | null>(null);
+        const inputRef = useRef<HTMLInputElement | null>(null);
+        const [localError, setLocalError] = useState<string>('');
+        const basePrice = watch?.Price || 0;
+        const suggestions = [5, 10, 15, 20]; // discount percentages
+
+        useEffect(() => {
+            // Focus input when opened
+            if (showNegotiateModal && inputRef.current) {
+                inputRef.current.focus();
+            }
+            // Escape key close
+            const handleKey = (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    setShowNegotiateModal(false);
+                }
+            };
+            window.addEventListener('keydown', handleKey);
+            return () => window.removeEventListener('keydown', handleKey);
+        }, []);
+
+        const applySuggestion = (pct: number) => {
+            const suggested = Math.max(1, Math.floor(basePrice * (1 - pct / 100)));
+            setProposedPrice(String(suggested));
+            setLocalError('');
+        };
+
+        const validateInline = (val: string) => {
+            if (!val) { setLocalError('Enter a value'); return; }
+            const num = Number(val);
+            if (isNaN(num)) { setLocalError('Not a number'); return; }
+            if (num <= 0) { setLocalError('Must be positive'); return; }
+            if (num >= basePrice) { setLocalError('Offer must be below current price'); return; }
+            setLocalError('');
+        };
+
+        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            setProposedPrice(e.target.value);
+            validateInline(e.target.value);
+        };
+
+        const handleSubmit = async () => {
+            if (localError) return;
+            await submitNegotiation();
+        };
+
+        const onBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+            if (e.target === e.currentTarget) {
+                setShowNegotiateModal(false);
+            }
+        };
+
+        return (
+            <div
+                className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center px-4"
+                role="dialog"
+                aria-modal="true"
+                onMouseDown={onBackdropClick}
+            >
+                <div
+                    ref={dialogRef}
+                    className="relative w-full max-w-md bg-white rounded-xl shadow-xl border border-gray-200 p-6 animate-fadeIn scale-100 flex flex-col"
+                >
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 className="text-xl font-semibold tracking-tight text-gray-900">Negotiate Price</h2>
+                            <p className="text-sm text-gray-500 mt-1">Suggest a fair offer below the current price.</p>
+                        </div>
+                        <button
+                            onClick={() => setShowNegotiateModal(false)}
+                            aria-label="Close negotiation modal"
+                            className="text-gray-400 hover:text-gray-600 rounded p-1 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        >
+                            <XMarkIcon className="w-6 h-6" />
+                        </button>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Current price</span>
+                            <span className="text-lg font-bold text-rose-600">₹{basePrice.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <label htmlFor="negOffer" className="block text-sm font-medium text-gray-700">Your offer (₹)</label>
+                            <input
+                                ref={inputRef}
+                                id="negOffer"
+                                type="number"
+                                min={1}
+                                max={Math.max(1, basePrice - 1)}
+                                value={proposedPrice}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500 text-base"
+                                placeholder="e.g. {Math.floor(basePrice*0.9)}"
+                            />
+                            {localError && <p className="mt-1 text-xs text-red-600" role="alert">{localError}</p>}
+                        </div>
+                        <div>
+                            <p className="text-xs font-medium text-gray-600 mb-2">Quick suggestions</p>
+                            <div className="flex flex-wrap gap-2">
+                                {suggestions.map(pct => {
+                                    const suggested = Math.max(1, Math.floor(basePrice * (1 - pct / 100)));
+                                    const active = proposedPrice === String(suggested);
+                                    return (
+                                        <button
+                                            key={pct}
+                                            type="button"
+                                            onClick={() => applySuggestion(pct)}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${active ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
+                                        >
+                                            -{pct}% (₹{suggested})
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                            <button
+                                onClick={handleSubmit}
+                                disabled={submittingNeg || !!localError || !proposedPrice}
+                                className="flex-1 inline-flex justify-center items-center bg-rose-600 disabled:bg-rose-300 text-white py-3 rounded-md font-medium shadow-sm hover:bg-rose-700 transition-colors"
+                            >
+                                {submittingNeg ? 'Submitting…' : 'Send Request'}
+                            </button>
+                            <button
+                                onClick={() => setShowNegotiateModal(false)}
+                                type="button"
+                                className="flex-1 inline-flex justify-center items-center py-3 rounded-md border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
+                            >Cancel</button>
+                        </div>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">We’ll notify you here when the seller responds. Approved offers automatically apply only for you.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     if (!watch) return (
         <div className="min-h-screen bg-white flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-600"></div>
@@ -629,18 +849,40 @@ const Detail = () => {
                                         {watch?.Company} {watch?.Model}
                                     </h1>
                                     <div className="flex flex-wrap items-center gap-4">
-                                        <span className="text-3xl font-bold text-rose-600">
-                                            ₹{watch?.Price?.toLocaleString()}
-                                        </span>
+                                        {approvedPrice && approvedPrice < (watch?.Price || 0) ? (
+                                            <div className="flex items-baseline gap-3">
+                                                <span className="text-gray-500 line-through text-xl">₹{watch?.Price?.toLocaleString()}</span>
+                                                <span className="text-3xl font-bold text-green-600">₹{approvedPrice.toLocaleString()}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-3xl font-bold text-rose-600">
+                                                ₹{watch?.Price?.toLocaleString()}
+                                            </span>
+                                        )}
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <span>SKU:</span>
                                             <span className="font-medium">{watch?.SKU}</span>
                                         </div>
+                                        {negStatus !== 'none' && (
+                                            <span className={`text-xs px-2 py-1 rounded-full ${negStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' : negStatus === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                {negStatus === 'pending' ? 'Negotiation pending' : negStatus === 'approved' ? 'Negotiation approved' : 'Negotiation rejected'}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* Actions Section */}
                                 <div className="flex flex-wrap gap-4">
+                                    <button
+                                        onClick={() => {
+                                            if (!currentUser) { toast.error('Please login to negotiate'); navigate('/login'); return; }
+                                            setShowNegotiateModal(true);
+                                        }}
+                                        disabled={negStatus === 'pending'}
+                                        className={`flex-1 min-w-[200px] py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 border ${negStatus === 'pending' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-900'}`}
+                                    >
+                                        {negStatus === 'approved' ? 'Approved price applied' : negStatus === 'pending' ? 'Request Sent' : 'Negotiate Price'}
+                                    </button>
                                     <button
                                         onClick={() => {
                                             if (!currentUser) {
@@ -898,6 +1140,7 @@ const Detail = () => {
             )}
 
             {showAddressModal && <AddressModal />}
+            {showNegotiateModal && <NegotiateModal />}
         </>
     );
 };
