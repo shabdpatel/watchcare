@@ -8,29 +8,59 @@ import ProductCard from "../components/ProductCard";
 import {
     XMarkIcon,
     FunnelIcon,
-    ArrowsUpDownIcon
+    ArrowsUpDownIcon,
+    ShoppingBagIcon
 } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import { useCart } from '../context/CartContext';
-import { toast } from 'react-toastify';
 
-// First, update the watch-specific filters at the top of the file
-const watchFilters = {
-    brands: ['Rolex', 'Omega', 'Casio', 'Fossil', 'Titan', 'Seiko', 'Timex', 'Citizen'],
-    dialColors: ['Black', 'Blue', 'Silver', 'Gold', 'White', 'Rose Gold'],
-    dialShapes: ['Round', 'Square', 'Rectangle', 'Oval', 'Tonneau'],
-    strapColors: ['Black', 'Brown', 'Silver', 'Gold', 'Blue', 'Rose Gold'],
-    strapMaterials: ['Leather', 'Metal', 'Nylon', 'Silicone', 'Ceramic'],
-    movements: ['Automatic', 'Quartz', 'Mechanical', 'Smart'],
-    features: ['Water Resistant', 'Chronograph', 'Date Display', 'GPS', 'Heart Rate Monitor'],
-    collections: ['Luxury', 'Sport', 'Casual', 'Formal', 'Smart']
+// Types for stronger safety without changing behavior
+interface Watch {
+    id: string;
+    collectionName: string;
+    Price: number; // normalized to number when fetched
+    Company?: string;
+    DateAdded?: string;
+    rating?: number;
+    reviews?: number;
+    images?: string[];
+    Image?: string;
+    salesCount?: number;
+    Description?: string;
+    Warranty?: { Status?: string; Type?: string; Duration?: string };
+    Gender?: string;
+    email?: string;
+    Seller?: { Email?: string };
+    CollectionType?: string;
+    DialColor?: string;
+    DialShape?: string;
+    StrapColor?: string;
+    StrapMaterial?: string;
+    Movement?: string;
+    Features?: string[];
+    Collection?: string;
+    Size?: string;
+    Color?: string;
+    Brand?: string;
+    Name?: string;
+}
+
+type FiltersState = {
+    [key: string]: string[];
+    brands: string[];
+    dialColors: string[];
+    dialShapes: string[];
+    strapColors: string[];
+    strapMaterials: string[];
+    movements: string[];
+    features: string[];
+    collections: string[];
 };
 
 const AllWatches = () => {
     const location = useLocation();
 
     // Update state declarations
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<FiltersState>({
         brands: [],
         dialColors: [],
         dialShapes: [],
@@ -39,19 +69,18 @@ const AllWatches = () => {
         movements: [],
         features: [],
         collections: []
-        // Remove priceRange from here since we're managing it separately
     });
-    const [sortOption, setSortOption] = useState('bestsellers');
-    const [wishlist, setWishlist] = useState([]);
-    const [selectedWatch, setSelectedWatch] = useState(null);
-    const [cart, setCart] = useState([]);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-    const [isSortOpen, setIsSortOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [allWatches, setAllWatches] = useState([]);
-    const [priceRange, setPriceRange] = useState([0, 1000000]);
+    const [sortOption, setSortOption] = useState<string>('bestsellers');
+    const [wishlist, setWishlist] = useState<string[]>([]);
+    const [selectedWatch, setSelectedWatch] = useState<Watch | null>(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+    const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
+    const [selectedService] = useState<string | null>(null);
+    const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
+    const [isSortOpen, setIsSortOpen] = useState<boolean>(false);
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [allWatches, setAllWatches] = useState<Watch[]>([]);
+    const [priceRange, setPriceRange] = useState<number[]>([0, 1000000]);
     const { addToCart } = useCart();
 
     // Check URL parameters on component mount
@@ -71,15 +100,26 @@ const AllWatches = () => {
         const fetchWatches = async () => {
             try {
                 const querySnapshot = await getDocs(collection(db, "Watches"));
-                const watches = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    collectionName: "Watches",
-                    // Rating between 3.5 and 5.0
-                    rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
-                    reviews: Math.floor(Math.random() * 100),
-                    ...doc.data(),
-                    Image: doc.data().images?.[0] || '',
-                }));
+                const watches: Watch[] = querySnapshot.docs.map((doc) => {
+                    const data = doc.data() as Record<string, unknown>;
+                    const rawWarranty = (data as Record<string, unknown>)['Warranty'] as unknown;
+                    const normalizedWarranty = typeof rawWarranty === 'boolean'
+                        ? (rawWarranty ? { Status: 'Active' } : { Status: 'Inactive' })
+                        : (rawWarranty as { Status?: string; Type?: string; Duration?: string } | undefined);
+
+                    return {
+                        id: doc.id,
+                        collectionName: "Watches",
+                        rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
+                        reviews: Math.floor(Math.random() * 100),
+                        ...(data as object),
+                        Price: Number((data as Record<string, unknown>)['Price'] as string | number) || 0,
+                        Image: ((data as Record<string, unknown>)['images'] as string[] | undefined)?.[0]
+                            || ((data as Record<string, unknown>)['Image'] as string | undefined)
+                            || '',
+                        Warranty: normalizedWarranty,
+                    } as Watch;
+                });
                 setAllWatches(watches);
             } catch (error) {
                 console.error("Error fetching watches:", error);
@@ -100,7 +140,7 @@ const AllWatches = () => {
 
 
 
-    const toggleWishlist = (watchId) => {
+    const toggleWishlist = (watchId: string) => {
         setWishlist(prev =>
             prev.includes(watchId)
                 ? prev.filter(id => id !== watchId)
@@ -108,13 +148,13 @@ const AllWatches = () => {
         );
     };
 
-    const handleAddToCart = (e, item) => {
+    const handleAddToCart = (e: React.MouseEvent | null, item: Watch) => {
         if (e) e.preventDefault();
         addToCart({
             id: item.id,
-            name: item.Brand || item.Name,
-            price: parseFloat(item.Price),
-            image: item.Image || item.images?.[0],
+            name: (item.Brand || item.Name || 'Watch'),
+            price: typeof item.Price === 'string' ? parseFloat(item.Price) : item.Price,
+            image: item.Image || item.images?.[0] || '',
             quantity: 1,
             category: 'Watches',  // Explicitly set category
             size: item.Size,
@@ -122,20 +162,20 @@ const AllWatches = () => {
         });
     };
 
-    const renderRating = (rating) => {
+    const renderRating = (rating: number) => {
         return [...Array(5)].map((_, i) => (
             <span key={i} className={`text-${i < rating ? 'yellow-400' : 'gray-500'}`}>&#9733;</span>
         ));
     };
 
-    const sortWatches = (watches) => {
+    const sortWatches = (watches: Watch[]) => {
         switch (sortOption) {
             case 'price-low-high':
                 return [...watches].sort((a, b) => (Number(a.Price) - Number(b.Price)));
             case 'price-high-low':
                 return [...watches].sort((a, b) => (Number(b.Price) - Number(a.Price)));
             case 'newest':
-                return [...watches].sort((a, b) => new Date(b.DateAdded) - new Date(a.DateAdded));
+                return [...watches].sort((a, b) => new Date(b.DateAdded || 0).getTime() - new Date(a.DateAdded || 0).getTime());
             case 'rating':
                 return [...watches].sort((a, b) => (b.rating || 0) - (a.rating || 0));
             case 'bestsellers':
@@ -146,7 +186,7 @@ const AllWatches = () => {
     };
 
     // Update the filter function
-    const filterWatches = (watches) => {
+    const filterWatches = (watches: Watch[]) => {
         return watches.filter(watch => {
             // Collection Type filtering
             if (selectedCategory === 'vintage' && watch.CollectionType !== 'Vintage Collection') {
@@ -155,8 +195,7 @@ const AllWatches = () => {
 
             // Warranty filtering
             if (selectedCategory === 'warranty') {
-                const hasWarranty = watch.Warranty?.Status === 'Active' ||
-                    (typeof watch.Warranty === 'boolean' && watch.Warranty === true);
+                const hasWarranty = watch.Warranty?.Status === 'Active';
                 if (!hasWarranty) {
                     return false;
                 }
@@ -183,7 +222,7 @@ const AllWatches = () => {
             }
 
             // Brand filtering
-            if (filters.brands.length > 0 && !filters.brands.includes(watch.Company)) {
+            if (filters.brands.length > 0 && !filters.brands.includes(watch.Company || '')) {
                 return false;
             }
 
@@ -194,27 +233,27 @@ const AllWatches = () => {
             }
 
             // Dial Color filtering
-            if (filters.dialColors.length > 0 && !filters.dialColors.includes(watch.DialColor)) {
+            if (filters.dialColors.length > 0 && !filters.dialColors.includes(watch.DialColor || '')) {
                 return false;
             }
 
             // Dial Shape filtering
-            if (filters.dialShapes.length > 0 && !filters.dialShapes.includes(watch.DialShape)) {
+            if (filters.dialShapes.length > 0 && !filters.dialShapes.includes(watch.DialShape || '')) {
                 return false;
             }
 
             // Strap Color filtering
-            if (filters.strapColors.length > 0 && !filters.strapColors.includes(watch.StrapColor)) {
+            if (filters.strapColors.length > 0 && !filters.strapColors.includes(watch.StrapColor || '')) {
                 return false;
             }
 
             // Strap Material filtering
-            if (filters.strapMaterials.length > 0 && !filters.strapMaterials.includes(watch.StrapMaterial)) {
+            if (filters.strapMaterials.length > 0 && !filters.strapMaterials.includes(watch.StrapMaterial || '')) {
                 return false;
             }
 
             // Movement filtering
-            if (filters.movements.length > 0 && !filters.movements.includes(watch.Movement)) {
+            if (filters.movements.length > 0 && !filters.movements.includes(watch.Movement || '')) {
                 return false;
             }
 
@@ -224,7 +263,7 @@ const AllWatches = () => {
             }
 
             // Collection filtering
-            if (filters.collections.length > 0 && !filters.collections.includes(watch.Collection)) {
+            if (filters.collections.length > 0 && !filters.collections.includes(watch.Collection || '')) {
                 return false;
             }
 
@@ -233,7 +272,7 @@ const AllWatches = () => {
     };
 
     // Apply the filter to your watches
-    const filteredWatches = sortWatches(filterWatches(allWatches));
+    const filteredWatches: Watch[] = sortWatches(filterWatches(allWatches));
     const BreadcrumbAndSort = () => (
         <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12 mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -315,7 +354,7 @@ const AllWatches = () => {
                                 selectedFilters={filters}
                                 setSelectedFilters={setFilters}
                                 priceRange={priceRange}
-                                setPriceRange={setPriceRange}
+                                setPriceRange={(range: number[]) => setPriceRange([range[0] ?? 0, range[1] ?? 0])}
                                 isMobile={true}
                             />
                         </div>
@@ -450,7 +489,7 @@ const AllWatches = () => {
                             selectedFilters={filters}
                             setSelectedFilters={setFilters}
                             priceRange={priceRange}
-                            setPriceRange={setPriceRange}
+                            setPriceRange={(range: number[]) => setPriceRange([range[0] ?? 0, range[1] ?? 0])}
                             isMobile={false}
                         />
                     </div>

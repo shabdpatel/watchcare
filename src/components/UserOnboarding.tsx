@@ -9,7 +9,7 @@ const UserOnboarding = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState<string>('');
 
     const [formData, setFormData] = useState({
         personalInfo: {
@@ -58,13 +58,13 @@ const UserOnboarding = () => {
         }
     });
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
         const fields = name.split('.');
 
         setFormData(prev => {
-            let newData = { ...prev };
-            let current = newData;
+            const newData = { ...prev } as any; // TODO: refine deep type without feature changes
+            let current = newData as any;
 
             for (let i = 0; i < fields.length - 1; i++) {
                 current = current[fields[i]];
@@ -83,7 +83,7 @@ const UserOnboarding = () => {
         });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');

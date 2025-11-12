@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "./firebase";
 import {
@@ -33,7 +33,7 @@ const Form = ({ selectedService, onClose }) => {
 
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     const steps = [
         { number: 1, title: "Watch Details" },
@@ -50,7 +50,7 @@ const Form = ({ selectedService, onClose }) => {
     };
 
     const validateStep = () => {
-        let newErrors = {};
+        const newErrors: Record<string, string> = {};
 
         if (currentStep === 1) {
             if (!formData.brand.trim()) newErrors.brand = "Brand is required";

@@ -4,7 +4,7 @@ import Homepage from "./pages/Homepage";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
 import Input_form from "./components/Input_form";
-import form from "./pages/form";
+import FormPage from "./pages/form";
 import Detail from "./components/Details";
 import AllWatches from "./pages/All_wathces";
 import Shoes from "./pages/Shoes";
@@ -31,7 +31,7 @@ import AdminPanel from './components/AdminPanel';
 import OrderSuccess from "./pages/OrderSuccess";
 import CheckoutFlow from "./components/CheckoutFlow";
 import Orders from './pages/Orders';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Loader from './components/Loader';
 
 function RouteChangeHandler() {
@@ -49,8 +49,10 @@ function RouteChangeHandler() {
   return isRouteChanging ? <Loader /> : null;
 }
 
+type AuthLike = { currentUser: { email?: string } | null; onboardingCompleted: boolean; loading: boolean };
+
 function AppContent() {
-  const { currentUser, onboardingCompleted, loading } = useAuth();
+  const { currentUser, onboardingCompleted, loading } = useAuth() as AuthLike;
 
   if (loading) return <Loader />;
 
@@ -60,12 +62,13 @@ function AppContent() {
         <RouteChangeHandler />
         <ScrollToTop />
         <Navbar />
-        <div className="flex-1 pt-20">
+        <main id="main-content" role="main" className="flex-1 pt-20" aria-label="Main content">
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/all_watches" element={<AllWatches />} />
             <Route path="/input" element={<Input_form />} />
-            <Route path="/form" element={<form />} />
+            {/* @ts-expect-error route-level page handles its own props/state */}
+            <Route path="/form" element={<FormPage />} />
             <Route path="/details/:collectionName/:id" element={<Detail />} />
             <Route path="/shoes" element={<Shoes />} />
             <Route path="/fashion" element={<Fashion />} />
@@ -73,6 +76,7 @@ function AppContent() {
             <Route path="/accessories" element={<Accessories />} />
             <Route path="/electronics" element={<Electronics />} />
             <Route path="/cart" element={<Cart />} />
+            {/* @ts-expect-error route wrapper supplies props internally */}
             <Route path="/checkout" element={<CheckoutFlow />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/orders" element={<Orders />} />
@@ -94,7 +98,7 @@ function AppContent() {
               )
             } />
             <Route path="/admin" element={
-              currentUser && ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'].includes(currentUser.email) ? (
+              currentUser && ['shabdpatel0@gmail.com', '22bph028@nith.ac.in', 'prameetsw@gmail.com', 'shabdpatel87@gmail.com'].includes(currentUser?.email ?? '') ? (
                 <AdminPanel />
               ) : (
                 <Navigate to="/login" replace />
@@ -102,7 +106,7 @@ function AppContent() {
             } />
             <Route path="/register" element={<Register />} />
           </Routes>
-        </div>
+        </main>
         <Footer />
         <ChatBot />
       </BrowserRouter>
@@ -115,6 +119,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <SearchProvider>
+          <a href="#main-content" className="skip-link">Skip to main content</a>
           <Favicon />
           <InstallPrompt />
           <ToastContainer

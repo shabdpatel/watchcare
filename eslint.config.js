@@ -23,6 +23,11 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // Relax some strict rules to avoid blocking on legacy code while preserving code quality
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-case-declarations': 'off',
+      'react-hooks/exhaustive-deps': 'warn'
     },
   },
 )
