@@ -14,27 +14,39 @@ const InstallPrompt: React.FC = () => {
         };
 
         const showInstallPrompt = () => {
-            if (!window.matchMedia('(display-mode: standalone)').matches) {
-                toast.info(
-                    <div className="install-prompt">
-                        <p>Install Unbox Store App for a better experience!</p>
-                        <button
-                            onClick={() => handleInstallClick()}
-                            className="bg-black text-white px-4 py-2 rounded"
-                            disabled={!isInstallable}
-                        >
-                            Install Now
-                        </button>
-                    </div>,
-                    {
-                        position: "bottom-center",
-                        autoClose: false,
-                        closeOnClick: false,
-                        pauseOnHover: true,
-                        draggable: true
-                    }
-                );
-            }
+            if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+            // Avoid spamming: show once per day
+            const lastShown = localStorage.getItem('installPromptLastShown');
+            const now = Date.now();
+            if (lastShown && now - Number(lastShown) < 24 * 60 * 60 * 1000) return;
+
+            localStorage.setItem('installPromptLastShown', String(now));
+
+            toast.dismiss();
+            toast(
+                <div className="flex items-center gap-3 px-3 py-2">
+                    <div className="h-8 w-8 rounded-md bg-black text-white flex items-center justify-center text-xs font-semibold">UX</div>
+                    <div className="flex-1">
+                        <p className="text-sm text-gray-900">Install Unbox Store for a faster experience</p>
+                    </div>
+                    <button
+                        onClick={handleInstallClick}
+                        className="px-3 py-1 rounded-md bg-black text-white text-sm disabled:opacity-60"
+                        disabled={!isInstallable}
+                        aria-label="Install Unbox Store"
+                    >
+                        Install Now
+                    </button>
+                </div>,
+                {
+                    position: 'bottom-center',
+                    autoClose: false,
+                    closeOnClick: false,
+                    hideProgressBar: true,
+                    className: 'shadow-lg rounded-lg bg-white border border-gray-200',
+                }
+            );
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -50,7 +62,8 @@ const InstallPrompt: React.FC = () => {
                 await (deferredPrompt as any).prompt();
                 const { outcome } = await (deferredPrompt as any).userChoice;
                 if (outcome === 'accepted') {
-                    toast.success('Thank you for installing Unbox Store!');
+                    toast.dismiss();
+                    toast.success('Unbox Store installed');
                     setIsInstallable(false);
                 }
                 setDeferredPrompt(null);
