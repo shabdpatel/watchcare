@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import CheckoutFlow from './CheckoutFlow';
 import { submitNegotiationRequest, listenNegotiation, getDisplayPrice } from '../utils/negotiation';
+import { ensureRazorpayKey } from '../config/payments';
 
 // Define interfaces
 interface ProductData {
@@ -430,7 +431,7 @@ const Detail = () => {
             // Initialize Razorpay order
             const displayPrice = getDisplayPrice(product.Price, approvedPrice);
             const options = {
-                key: 'rzp_test_T5M2JyEgw9JAXJ',
+                key: ensureRazorpayKey(),
                 amount: displayPrice * 100, // Amount in paise
                 currency: 'INR',
                 name: 'Watch Store',

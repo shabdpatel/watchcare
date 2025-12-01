@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ensureRazorpayKey } from '../config/payments';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { XMarkIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -145,7 +146,7 @@ const Cart = () => {
             }
 
             const options = {
-                key: 'rzp_live_UTHrYljhpKfSae',
+                key: ensureRazorpayKey(),
                 amount: (total + (total * 0.18)) * 100,
                 currency: 'INR',
                 name: 'Watch Store',
