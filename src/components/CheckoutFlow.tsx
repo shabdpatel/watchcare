@@ -23,6 +23,7 @@ import {
     ArrowLeftIcon,
     XMarkIcon
 } from '@heroicons/react/24/outline';
+import { ensureRazorpayKey } from '../config/payments';
 
 interface ProductData {
     id: string;
@@ -158,7 +159,7 @@ const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ product, onClose }) => {
                 }
 
                 const options = {
-                    key: 'rzp_live_UTHrYljhpKfSae',
+                    key: ensureRazorpayKey(),
                     amount: orderSummary.total * 100,
                     currency: 'INR',
                     name: 'Watch Store',

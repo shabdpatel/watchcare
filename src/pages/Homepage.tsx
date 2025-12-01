@@ -192,7 +192,7 @@ const Homepage = () => {
                                 className="group relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden rounded-lg shadow-2xl transform transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=600&h=800&fit=crop&crop=center"
+                                    src="https://res.cloudinary.com/dcudiau08/image/upload/v1764595289/WhatsApp_Image_2025-11-26_at_20.59.17_segyye.jpg"
                                     alt="Project Watches"
                                     loading="lazy"
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
